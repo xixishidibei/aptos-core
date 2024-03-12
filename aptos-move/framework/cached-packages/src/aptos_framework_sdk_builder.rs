@@ -443,6 +443,24 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
+    /// Update dispatchable authenticator that enables account abstraction.
+    /// Note: it is a private entry function that can only be called directly from transaction.
+    LiteAccountAddDispatchableAuthenticationFunction {
+        module_address: AccountAddress,
+        module_name: Vec<u8>,
+        function_name: Vec<u8>,
+    },
+
+    LiteAccountRemoveDispatchableAuthenticationFunciton {
+        module_address: AccountAddress,
+        module_name: Vec<u8>,
+        function_name: Vec<u8>,
+    },
+
+    /// Update dispatchable authenticator that disables account abstraction.
+    /// Note: it is a private entry function that can only be called directly from transaction.
+    LiteAccountRemoveDispatchableAuthenticator {},
+
     /// Withdraw an `amount` of coin `CoinType` from `account` and burn it.
     ManagedCoinBurn {
         coin_type: TypeTag,
@@ -1272,6 +1290,27 @@ impl EntryFunctionCall {
                 pool_address,
                 amount,
             } => delegation_pool_withdraw(pool_address, amount),
+            LiteAccountAddDispatchableAuthenticationFunction {
+                module_address,
+                module_name,
+                function_name,
+            } => lite_account_add_dispatchable_authentication_function(
+                module_address,
+                module_name,
+                function_name,
+            ),
+            LiteAccountRemoveDispatchableAuthenticationFunciton {
+                module_address,
+                module_name,
+                function_name,
+            } => lite_account_remove_dispatchable_authentication_funciton(
+                module_address,
+                module_name,
+                function_name,
+            ),
+            LiteAccountRemoveDispatchableAuthenticator {} => {
+                lite_account_remove_dispatchable_authenticator()
+            },
             ManagedCoinBurn { coin_type, amount } => managed_coin_burn(coin_type, amount),
             ManagedCoinInitialize {
                 coin_type,
@@ -2816,6 +2855,71 @@ pub fn delegation_pool_withdraw(pool_address: AccountAddress, amount: u64) -> Tr
             bcs::to_bytes(&pool_address).unwrap(),
             bcs::to_bytes(&amount).unwrap(),
         ],
+    ))
+}
+
+/// Update dispatchable authenticator that enables account abstraction.
+/// Note: it is a private entry function that can only be called directly from transaction.
+pub fn lite_account_add_dispatchable_authentication_function(
+    module_address: AccountAddress,
+    module_name: Vec<u8>,
+    function_name: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("lite_account").to_owned(),
+        ),
+        ident_str!("add_dispatchable_authentication_function").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&module_address).unwrap(),
+            bcs::to_bytes(&module_name).unwrap(),
+            bcs::to_bytes(&function_name).unwrap(),
+        ],
+    ))
+}
+
+pub fn lite_account_remove_dispatchable_authentication_funciton(
+    module_address: AccountAddress,
+    module_name: Vec<u8>,
+    function_name: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("lite_account").to_owned(),
+        ),
+        ident_str!("remove_dispatchable_authentication_funciton").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&module_address).unwrap(),
+            bcs::to_bytes(&module_name).unwrap(),
+            bcs::to_bytes(&function_name).unwrap(),
+        ],
+    ))
+}
+
+/// Update dispatchable authenticator that disables account abstraction.
+/// Note: it is a private entry function that can only be called directly from transaction.
+pub fn lite_account_remove_dispatchable_authenticator() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("lite_account").to_owned(),
+        ),
+        ident_str!("remove_dispatchable_authenticator").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -5323,6 +5427,48 @@ mod decoder {
         }
     }
 
+    pub fn lite_account_add_dispatchable_authentication_function(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(
+                EntryFunctionCall::LiteAccountAddDispatchableAuthenticationFunction {
+                    module_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                    module_name: bcs::from_bytes(script.args().get(1)?).ok()?,
+                    function_name: bcs::from_bytes(script.args().get(2)?).ok()?,
+                },
+            )
+        } else {
+            None
+        }
+    }
+
+    pub fn lite_account_remove_dispatchable_authentication_funciton(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(
+                EntryFunctionCall::LiteAccountRemoveDispatchableAuthenticationFunciton {
+                    module_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                    module_name: bcs::from_bytes(script.args().get(1)?).ok()?,
+                    function_name: bcs::from_bytes(script.args().get(2)?).ok()?,
+                },
+            )
+        } else {
+            None
+        }
+    }
+
+    pub fn lite_account_remove_dispatchable_authenticator(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::LiteAccountRemoveDispatchableAuthenticator {})
+        } else {
+            None
+        }
+    }
+
     pub fn managed_coin_burn(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::ManagedCoinBurn {
@@ -6628,6 +6774,18 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "delegation_pool_withdraw".to_string(),
             Box::new(decoder::delegation_pool_withdraw),
+        );
+        map.insert(
+            "lite_account_add_dispatchable_authentication_function".to_string(),
+            Box::new(decoder::lite_account_add_dispatchable_authentication_function),
+        );
+        map.insert(
+            "lite_account_remove_dispatchable_authentication_funciton".to_string(),
+            Box::new(decoder::lite_account_remove_dispatchable_authentication_funciton),
+        );
+        map.insert(
+            "lite_account_remove_dispatchable_authenticator".to_string(),
+            Box::new(decoder::lite_account_remove_dispatchable_authenticator),
         );
         map.insert(
             "managed_coin_burn".to_string(),
