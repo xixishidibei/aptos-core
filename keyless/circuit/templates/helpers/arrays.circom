@@ -1,9 +1,16 @@
 pragma circom 2.1.3;
 
+<<<<<<< HEAD
 include "../../node_modules/circomlib/circuits/multiplexer.circom";
 include "../../node_modules/circomlib/circuits/comparators.circom";
 include "helpers/hashtofield.circom";
 include "helpers/misc.circom";
+=======
+include "circomlib/circuits/multiplexer.circom";
+include "circomlib/circuits/comparators.circom";
+include "./hashtofield.circom";
+include "./misc.circom";
+>>>>>>> main
 
 // Outputs a bit array where indices [start_index, end_index) (inclusive of start_index, exclusive of end_index) are all 1, and all other bits are 0. Does not work if end_index is greater than `len`
 template ArraySelector(len) {
@@ -269,9 +276,12 @@ template ConcatenationCheck(maxFullStringLen, maxLeftStringLen, maxRightStringLe
 template CheckAreASCIIDigits(maxNumDigits) {
     signal input in[maxNumDigits];
     signal input len;
+<<<<<<< HEAD
     for (var i = 0; i < maxNumDigits; i++) {
         log(in[i]);
     }
+=======
+>>>>>>> main
     
     signal selector[maxNumDigits] <== ArraySelector(maxNumDigits)(0, len);
     for (var i = 0; i < maxNumDigits; i++) {

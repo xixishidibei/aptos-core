@@ -7,8 +7,12 @@ on:
   pull_request:
     paths:
       - ".github/workflows/keyless-circuit-daily-test.yaml"
+<<<<<<< HEAD
       - "keyless/circuit-data/**"
       - "keyless/circuit-tests/**"
+=======
+      - "keyless/circuit/**"
+>>>>>>> main
 env:
   CARGO_INCREMENTAL: "0"
   CARGO_TERM_COLOR: always
@@ -21,7 +25,11 @@ concurrency:
 
 jobs:
   run-all-circuit-tests:
+<<<<<<< HEAD
     runs-on: high-perf-docker
+=======
+    runs-on: runs-on,cpu=64,family=c7,hdd=500,image=aptos-ubuntu-x64,run-id=${{ github.run_id }}
+>>>>>>> main
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v3
@@ -29,5 +37,10 @@ jobs:
           fetch-depth: 0 # get all the history because cargo xtest --change-since origin/main requires it.
       - uses: ./.github/actions/rust-setup
       - run: |
+<<<<<<< HEAD
           . keyless/circuit-data/install-deps.sh
           cargo test -p aptos-keyless-circuit-tests -- --nocapture
+=======
+          . keyless/circuit/tools/install-deps.sh
+          cargo test -p aptos-keyless-circuit -- --nocapture
+>>>>>>> main

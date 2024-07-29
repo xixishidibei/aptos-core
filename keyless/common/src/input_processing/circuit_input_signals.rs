@@ -1,8 +1,11 @@
 // Copyright © Aptos Foundation
 // SPDX-License-Identifier: Apache-2.0
 
+<<<<<<< HEAD
 // Copyright © Aptos Foundation
 
+=======
+>>>>>>> main
 use super::config::CircuitPaddingConfig;
 use anyhow::{anyhow, bail, Result};
 use ark_bn254::Fr;
@@ -174,7 +177,12 @@ fn pad_if_needed(
         CircuitInputSignal::Fr(x) => CircuitInputSignal::Fr(x),
         CircuitInputSignal::Frs(x) => CircuitInputSignal::Frs(x),
         CircuitInputSignal::Limbs(mut x) => {
+<<<<<<< HEAD
             let zeros_needed = global_input_max_lengths.get(k).copied().unwrap_or(x.len()) - x.len();
+=======
+            let zeros_needed =
+                global_input_max_lengths.get(k).copied().unwrap_or(x.len()) - x.len();
+>>>>>>> main
             x.extend(vec![0; zeros_needed]);
             CircuitInputSignal::Limbs(x)
         },

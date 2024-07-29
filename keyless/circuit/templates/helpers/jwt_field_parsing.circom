@@ -1,11 +1,20 @@
 pragma circom 2.1.3;
 
+<<<<<<< HEAD
 include "helpers/misc.circom";
 include "helpers/arrays.circom";
 include "helpers/hashtofield.circom";
 include "helpers/packing.circom";
 include "../node_modules/circomlib/circuits/gates.circom";
 include "../node_modules/circomlib/circuits/bitify.circom";
+=======
+include "./misc.circom";
+include "./arrays.circom";
+include "./hashtofield.circom";
+include "./packing.circom";
+include "circomlib/circuits/gates.circom";
+include "circomlib/circuits/bitify.circom";
+>>>>>>> main
 
 template ParseJWTFieldSharedLogic(maxKVPairLen, maxNameLen, maxValueLen) {
     signal input field[maxKVPairLen]; // ASCII

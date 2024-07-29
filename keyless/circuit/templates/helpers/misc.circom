@@ -1,10 +1,18 @@
 pragma circom 2.1.3;
 
+<<<<<<< HEAD
 include "helpers/arrays.circom";
 include "helpers/hashtofield.circom";
 include "helpers/packing.circom";
 include "../node_modules/circomlib/circuits/gates.circom";
 include "../node_modules/circomlib/circuits/bitify.circom";
+=======
+include "./arrays.circom";
+include "./hashtofield.circom";
+include "./packing.circom";
+include "circomlib/circuits/gates.circom";
+include "circomlib/circuits/bitify.circom";
+>>>>>>> main
 
 // Checks if character 'char' is a whitespace character. Returns 1 if so, 0 otherwise
 // Assumes char is a valid ascii character. Does not check for non-ascii unicode whitespace chars.
@@ -140,6 +148,7 @@ template StringBodies(len) {
   }
 }
 
+<<<<<<< HEAD
 template BracketsMap(len) {
     signal input arr[len];
     signal output brackets[len];
@@ -152,6 +161,8 @@ template BracketsMap(len) {
     }
 }
 
+=======
+>>>>>>> main
 
 // Given a base64-encoded array `in`, max length `maxN`, and actual unpadded length `n`, returns
 // the actual length of the decoded string

@@ -1,5 +1,11 @@
 // Copyright © Aptos Foundation
+<<<<<<< HEAD
 
+=======
+// SPDX-License-Identifier: Apache-2.0
+
+use crate::api::{EphemeralPublicKeyBlinder, PoseidonHash};
+>>>>>>> main
 use anyhow::{anyhow, Result};
 use aptos_types::{
     jwks::rsa::RSA_JWK, keyless::Pepper, transaction::authenticator::EphemeralPublicKey,
@@ -9,8 +15,11 @@ use ark_ff::{BigInteger, PrimeField};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 
+<<<<<<< HEAD
 use crate::api::{EphemeralPublicKeyBlinder, PoseidonHash};
 
+=======
+>>>>>>> main
 pub type RsaSignature = BigUint;
 
 pub trait AsFr {

@@ -1,6 +1,10 @@
 pragma circom 2.1.3;
 
+<<<<<<< HEAD
 include "helpers/arrays.circom";
+=======
+include "./arrays.circom";
+>>>>>>> main
 
 // Based on `Num2Bits` in circomlib
 template Num2BitsBE(n) {

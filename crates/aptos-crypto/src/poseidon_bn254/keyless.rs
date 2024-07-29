@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Implements keyless-specific domain-separated hash functions from Poseidon scalar hashing.
-use crate::{poseidon_bn254, poseidon_bn254::MAX_NUM_INPUT_SCALARS};
+use crate::{
+    poseidon_bn254,
+    poseidon_bn254::{hash_scalars, MAX_NUM_INPUT_SCALARS},
+};
 use anyhow::bail;
 use ark_bn254::Fr;
 use ark_ff::{BigInteger, PrimeField};
@@ -28,6 +31,7 @@ pub const MAX_NUM_INPUT_BYTES: usize = MAX_NUM_INPUT_SCALARS * BYTES_PACKED_PER_
 /// `MAX_NUM_INPUT_BYTES` but for u64s.
 pub const MAX_NUM_INPUT_LIMBS: usize = MAX_NUM_INPUT_SCALARS * LIMBS_PACKED_PER_SCALAR;
 
+<<<<<<< HEAD
 /// Apparently, creating this object is rather slow, so we make it a global.
 static HASHER: Lazy<Poseidon> = Lazy::new(Poseidon::new);
 
@@ -45,6 +49,9 @@ pub fn hash_scalars(inputs: Vec<Fr>) -> anyhow::Result<Fr> {
 }
 
 /// Given an string and `max_bytes`, it pads the byte array of the string with zeros up to size `max_bytes`,
+=======
+/// Given a string and `max_bytes`, it pads the byte array of the string with zeros up to size `max_bytes`,
+>>>>>>> main
 /// packs it to scalars, and returns the hash of the scalars.
 ///
 /// This function calls `pad_and_pack_bytes_to_scalars_no_len` safely as strings will not contain the zero byte except to terminate.
@@ -144,7 +151,11 @@ pub fn pad_and_pack_limbs_to_scalars_with_len(
         );
     }
 
+<<<<<<< HEAD
     let len_scalar = Fr::try_from(len as u64).unwrap();
+=======
+    let len_scalar = From::from(len as u64);
+>>>>>>> main
     let scalars = pad_and_pack_limbs_to_scalars_no_len(limbs, max_limbs)?
         .into_iter()
         .chain([len_scalar])
@@ -228,19 +239,29 @@ fn hash_bytes(bytes: &[u8]) -> anyhow::Result<ark_bn254::Fr> {
 /// Due to risk of collisions due to improper use by the caller, it is not exposed.
 pub fn pad_and_hash_bytes_no_len(bytes: &[u8], max_bytes: usize) -> anyhow::Result<ark_bn254::Fr> {
     let scalars = pad_and_pack_bytes_to_scalars_no_len(bytes, max_bytes)?;
-    poseidon_bn254::hash_scalars(scalars)
+    hash_scalars(scalars)
 }
 
 /// Given `bytes`, if the length of `bytes` is less than `max_bytes`, pads `bytes` with zeros to length `max_bytes`.
 /// Then it packs these padded `bytes` and preserves the original length as the first scalar and returns the hash of the scalars via `hash_scalars`.
 ///
 /// This is used when we want to preserve the length of the `bytes` to prevent collisions where `bytes` could terminate in 0's.
+<<<<<<< HEAD
 pub fn pad_and_hash_bytes_with_len(
     bytes: &[u8],
     max_bytes: usize,
 ) -> anyhow::Result<Fr> {
+=======
+pub fn pad_and_hash_bytes_with_len(bytes: &[u8], max_bytes: usize) -> anyhow::Result<Fr> {
+>>>>>>> main
     let scalars = pad_and_pack_bytes_to_scalars_with_len(bytes, max_bytes)?;
-    poseidon_bn254::hash_scalars(scalars)
+    hash_scalars(scalars)
+}
+
+/// `pad_and_hash_bytes_with_len` but for u64s.
+pub fn pad_and_hash_limbs_with_len(limbs: &[u64], max_limbs: usize) -> anyhow::Result<Fr> {
+    let scalars = pad_and_pack_limbs_to_scalars_with_len(limbs, max_limbs)?;
+    hash_scalars(scalars)
 }
 
 /// `pad_and_hash_bytes_with_len` but for u64s.
@@ -313,7 +334,14 @@ pub fn pack_limbs_to_one_scalar(chunk: &[u64]) -> anyhow::Result<Fr> {
             chunk.len(),
         );
     }
+<<<<<<< HEAD
     let bytes_chunk: Vec<u8> = chunk.iter().flat_map(|&limb| limb.to_le_bytes().into_iter()).collect();
+=======
+    let bytes_chunk: Vec<u8> = chunk
+        .iter()
+        .flat_map(|&limb| limb.to_le_bytes().into_iter())
+        .collect();
+>>>>>>> main
     let fr = ark_bn254::Fr::from_le_bytes_mod_order(bytes_chunk.as_slice());
     Ok(fr)
 }
