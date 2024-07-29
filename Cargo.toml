@@ -133,14 +133,9 @@ members = [
     "execution/executor-test-helpers",
     "execution/executor-types",
     "experimental/execution/ptx-executor",
-<<<<<<< HEAD
-    "experimental/runtimes", 
-    "keyless/circuit-tests",
-=======
     "experimental/runtimes",
     "experimental/storage/layered-map",
     "keyless/circuit",
->>>>>>> main
     "keyless/common",
     "keyless/pepper/common",
     "keyless/pepper/example-client-rust",

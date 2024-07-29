@@ -31,27 +31,7 @@ pub const MAX_NUM_INPUT_BYTES: usize = MAX_NUM_INPUT_SCALARS * BYTES_PACKED_PER_
 /// `MAX_NUM_INPUT_BYTES` but for u64s.
 pub const MAX_NUM_INPUT_LIMBS: usize = MAX_NUM_INPUT_SCALARS * LIMBS_PACKED_PER_SCALAR;
 
-<<<<<<< HEAD
-/// Apparently, creating this object is rather slow, so we make it a global.
-static HASHER: Lazy<Poseidon> = Lazy::new(Poseidon::new);
-
-/// Given an array of up to `MAX_NUM_INPUT_SCALARS` field elements (in the BN254 scalar field), hashes
-/// them using Poseidon-BN254 into a single field element.
-pub fn hash_scalars(inputs: Vec<Fr>) -> anyhow::Result<Fr> {
-    if inputs.is_empty() || inputs.len() > MAX_NUM_INPUT_SCALARS {
-        bail!(
-            "Poseidon-BN254 needs > 0 and <= 16 inputs, but was called with {} inputs",
-            inputs.len()
-        );
-    }
-
-    HASHER.hash(inputs).map_err(anyhow::Error::msg)
-}
-
-/// Given an string and `max_bytes`, it pads the byte array of the string with zeros up to size `max_bytes`,
-=======
 /// Given a string and `max_bytes`, it pads the byte array of the string with zeros up to size `max_bytes`,
->>>>>>> main
 /// packs it to scalars, and returns the hash of the scalars.
 ///
 /// This function calls `pad_and_pack_bytes_to_scalars_no_len` safely as strings will not contain the zero byte except to terminate.
@@ -151,11 +131,7 @@ pub fn pad_and_pack_limbs_to_scalars_with_len(
         );
     }
 
-<<<<<<< HEAD
-    let len_scalar = Fr::try_from(len as u64).unwrap();
-=======
     let len_scalar = From::from(len as u64);
->>>>>>> main
     let scalars = pad_and_pack_limbs_to_scalars_no_len(limbs, max_limbs)?
         .into_iter()
         .chain([len_scalar])
@@ -246,29 +222,13 @@ pub fn pad_and_hash_bytes_no_len(bytes: &[u8], max_bytes: usize) -> anyhow::Resu
 /// Then it packs these padded `bytes` and preserves the original length as the first scalar and returns the hash of the scalars via `hash_scalars`.
 ///
 /// This is used when we want to preserve the length of the `bytes` to prevent collisions where `bytes` could terminate in 0's.
-<<<<<<< HEAD
-pub fn pad_and_hash_bytes_with_len(
-    bytes: &[u8],
-    max_bytes: usize,
-) -> anyhow::Result<Fr> {
-=======
 pub fn pad_and_hash_bytes_with_len(bytes: &[u8], max_bytes: usize) -> anyhow::Result<Fr> {
->>>>>>> main
     let scalars = pad_and_pack_bytes_to_scalars_with_len(bytes, max_bytes)?;
     hash_scalars(scalars)
 }
 
 /// `pad_and_hash_bytes_with_len` but for u64s.
 pub fn pad_and_hash_limbs_with_len(limbs: &[u64], max_limbs: usize) -> anyhow::Result<Fr> {
-    let scalars = pad_and_pack_limbs_to_scalars_with_len(limbs, max_limbs)?;
-    hash_scalars(scalars)
-}
-
-/// `pad_and_hash_bytes_with_len` but for u64s.
-pub fn pad_and_hash_limbs_with_len(
-    limbs: &[u64],
-    max_limbs: usize,
-) -> anyhow::Result<Fr> {
     let scalars = pad_and_pack_limbs_to_scalars_with_len(limbs, max_limbs)?;
     hash_scalars(scalars)
 }
@@ -334,14 +294,10 @@ pub fn pack_limbs_to_one_scalar(chunk: &[u64]) -> anyhow::Result<Fr> {
             chunk.len(),
         );
     }
-<<<<<<< HEAD
-    let bytes_chunk: Vec<u8> = chunk.iter().flat_map(|&limb| limb.to_le_bytes().into_iter()).collect();
-=======
     let bytes_chunk: Vec<u8> = chunk
         .iter()
         .flat_map(|&limb| limb.to_le_bytes().into_iter())
         .collect();
->>>>>>> main
     let fr = ark_bn254::Fr::from_le_bytes_mod_order(bytes_chunk.as_slice());
     Ok(fr)
 }

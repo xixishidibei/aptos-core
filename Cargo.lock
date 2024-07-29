@@ -2379,32 +2379,18 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-name = "aptos-keyless-circuit-tests"
-=======
 name = "aptos-keyless-circuit"
->>>>>>> main
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "aptos-crypto",
  "aptos-keyless-common",
  "aptos-logger",
-<<<<<<< HEAD
- "aptos-types",
- "ark-bn254",
- "ark-ff",
- "base64 0.13.1",
- "futures",
- "hex",
- "itertools 0.12.1",
-=======
  "ark-bn254",
  "ark-ff",
  "base64 0.13.1",
  "hex",
  "itertools 0.13.0",
->>>>>>> main
  "num-bigint 0.3.3",
  "num-modular",
  "num-traits",
@@ -2428,17 +2414,9 @@ dependencies = [
  "base64 0.13.1",
  "hex",
  "num-bigint 0.3.3",
-<<<<<<< HEAD
- "num-modular",
  "serde",
  "serde_json",
  "tempfile",
- "thiserror",
-=======
- "serde",
- "serde_json",
- "tempfile",
->>>>>>> main
  "tracing",
 ]
 
