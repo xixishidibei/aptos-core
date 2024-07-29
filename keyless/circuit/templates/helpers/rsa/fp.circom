@@ -2,11 +2,7 @@ pragma circom 2.0.3;
 
 // File copied from https://github.com/doubleblind-xyz/circom-rsa/blob/master/circuits/fp.circom
 
-<<<<<<< HEAD
-include "../node_modules/circomlib/circuits/bitify.circom";
-=======
 include "circomlib/circuits/bitify.circom";
->>>>>>> main
 
 include "./bigint.circom";
 include "./bigint_func.circom";

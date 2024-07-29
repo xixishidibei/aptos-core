@@ -1,12 +1,7 @@
 pragma circom 2.1.3;
 
-<<<<<<< HEAD
-include "../node_modules/circomlib/circuits/poseidon.circom";
-include "../node_modules/circomlib/circuits/comparators.circom";
-=======
 include "circomlib/circuits/poseidon.circom";
 include "circomlib/circuits/comparators.circom";
->>>>>>> main
 
 // Enforces that each scalar in the input array `in` will fit in a byte
 template CheckAreBytes(numBytes) {

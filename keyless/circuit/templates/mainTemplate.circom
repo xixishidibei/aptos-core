@@ -104,10 +104,7 @@ template identity(
     signal ascii_jwt_payload_hash <== HashBytesToFieldWithLen(max_ascii_jwt_payload_len)(ascii_jwt_payload, ascii_payload_len);
 
 
-<<<<<<< HEAD
     signal brackets_map[max_ascii_jwt_payload_len] <== BracketsMap(max_ascii_jwt_payload_len)(ascii_jwt_payload);
-=======
->>>>>>> main
     signal string_bodies[max_ascii_jwt_payload_len] <== StringBodies(max_ascii_jwt_payload_len)(ascii_jwt_payload);
 
     // Check aud field is in the JWT
@@ -118,13 +115,10 @@ template identity(
     CheckSubstrInclusionPoly(max_ascii_jwt_payload_len, maxAudKVPairLen)(ascii_jwt_payload, ascii_jwt_payload_hash, aud_field, aud_field_len, aud_index); 
     CheckSubstrInclusionPoly(max_ascii_jwt_payload_len, maxAudKVPairLen)(string_bodies, ascii_jwt_payload_hash, aud_field_string_bodies, aud_field_len, aud_index); 
 
-<<<<<<< HEAD
     signal aud_brackets_selector[max_ascii_jwt_payload_len] <== ArraySelector(max_ascii_jwt_payload_len)(aud_index, aud_index+aud_field_len);
     signal aud_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(ascii_jwt_payload, aud_brackets_selector);
     aud_is_nested === 0;
 
-=======
->>>>>>> main
     // Perform necessary checks on aud field
     var aud_name_len = 3;
     signal input aud_value_index;
@@ -163,13 +157,10 @@ template identity(
     CheckSubstrInclusionPoly(max_ascii_jwt_payload_len, maxUIDKVPairLen)(ascii_jwt_payload, ascii_jwt_payload_hash, uid_field, uid_field_len, uid_index);
     CheckSubstrInclusionPoly(max_ascii_jwt_payload_len, maxUIDKVPairLen)(string_bodies, ascii_jwt_payload_hash, uid_field_string_bodies, uid_field_len, uid_index);
 
-<<<<<<< HEAD
     signal uid_brackets_selector[max_ascii_jwt_payload_len] <== ArraySelector(max_ascii_jwt_payload_len)(uid_index, uid_index+uid_field_len);
     signal uid_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(ascii_jwt_payload, uid_brackets_selector);
     uid_is_nested === 0;
 
-=======
->>>>>>> main
     // Perform necessary checks on user id field. Some fields this might be in practice are "sub" or "email"
     signal input uid_name_len;
     signal input uid_value_index;

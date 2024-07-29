@@ -1,16 +1,9 @@
 pragma circom 2.1.3;
 
-<<<<<<< HEAD
-include "../node_modules/circomlib/circuits/sha256/constants.circom";
-include "../node_modules/circomlib/circuits/sha256/sha256compression.circom";
-include "../node_modules/circomlib/circuits/comparators.circom";
-include "helpers/misc.circom";
-=======
 include "circomlib/circuits/sha256/constants.circom";
 include "circomlib/circuits/sha256/sha256compression.circom";
 include "circomlib/circuits/comparators.circom";
 include "./misc.circom";
->>>>>>> main
 
 // Similar to `sha256_unsafe` in https://github.com/TheFrozenFire/snark-jwt-verify/blob/master/circuits/sha256.circom
 // Hashes a bit array message using SHA2_256, hashing every block up to and including `tBlock`. All blocks after `tBlock` are ignored in the output

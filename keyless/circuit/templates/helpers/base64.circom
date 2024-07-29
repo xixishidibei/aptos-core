@@ -2,11 +2,7 @@ pragma circom 2.1.3;
 
 // File taken from https://github.com/zkemail/zk-email-verify/blob/main/packages/circuits/helpers/base64.circom
 
-<<<<<<< HEAD
-include "../../node_modules/circomlib/circuits/comparators.circom";
-=======
 include "circomlib/circuits/comparators.circom";
->>>>>>> main
 
 // http://0x80.pl/notesen/2016-01-17-sse-base64-decoding.html#vector-lookup-base
 // Modified to support Base64URL format instead of Base64
@@ -66,11 +62,7 @@ template Base64URLLookup() {
     signal sum_underscore <== sum_minus + equal_underscore.out * 63;
 
     out <== sum_underscore;
-<<<<<<< HEAD
-    log("sum_underscore (out): ", out);
-=======
     //log("sum_underscore (out): ", out);
->>>>>>> main
 
     // '='
     component equal_eqsign = IsZero();
@@ -81,16 +73,6 @@ template Base64URLLookup() {
     zero_padding.in <== in;
 
 
-<<<<<<< HEAD
-    log("zero_padding.out: ", zero_padding.out);
-    log("equal_eqsign.out: ", equal_eqsign.out);
-    log("equal_underscore.out: ", equal_underscore.out);
-    log("equal_minus.out: ", equal_minus.out);
-    log("range_09: ", range_09);
-    log("range_az: ", range_az);
-    log("range_AZ: ", range_AZ);
-    log("< end Base64URLLookup");
-=======
     //log("zero_padding.out: ", zero_padding.out);
     //log("equal_eqsign.out: ", equal_eqsign.out);
     //log("equal_underscore.out: ", equal_underscore.out);
@@ -99,7 +81,6 @@ template Base64URLLookup() {
     //log("range_az: ", range_az);
     //log("range_AZ: ", range_AZ);
     //log("< end Base64URLLookup");
->>>>>>> main
 
     signal result <== range_AZ + range_az + range_09 + equal_minus.out + equal_underscore.out + equal_eqsign.out + zero_padding.out;
     1 === result;
@@ -126,13 +107,8 @@ template Base64Decode(N) {
         for (var j = 0; j < 4; j++) {
             bits_in[i\4][j] = Num2Bits(6);
 
-<<<<<<< HEAD
-            log(">> calling into Base64URLLookup");
-            log("translate[i\\4][j].in: ", in[i+j]);
-=======
             //log(">> calling into Base64URLLookup");
             //log("translate[i\\4][j].in: ", in[i+j]);
->>>>>>> main
 
             translate[i\4][j] = Base64URLLookup();
             translate[i\4][j].in <== in[i+j];

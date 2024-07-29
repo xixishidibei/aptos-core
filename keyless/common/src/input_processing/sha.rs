@@ -1,21 +1,12 @@
 // Copyright © Aptos Foundation
-<<<<<<< HEAD
-=======
 // SPDX-License-Identifier: Apache-2.0
->>>>>>> main
 
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-<<<<<<< HEAD
-use tracing::debug;
-
-use super::bits::Bits;
-=======
 use super::bits::Bits;
 use tracing::debug;
->>>>>>> main
 
 pub fn jwt_bit_len(jwt: &[u8]) -> usize {
     jwt.len() * 8
@@ -82,7 +73,3 @@ pub fn with_sha_padding_bytes(jwt_unsigned: &[u8]) -> Vec<u8> {
         .as_bytes()
         .expect("Should have length a multiple of 8")
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> main
