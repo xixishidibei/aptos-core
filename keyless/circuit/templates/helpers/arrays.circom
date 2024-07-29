@@ -276,13 +276,7 @@ template ConcatenationCheck(maxFullStringLen, maxLeftStringLen, maxRightStringLe
 template CheckAreASCIIDigits(maxNumDigits) {
     signal input in[maxNumDigits];
     signal input len;
-<<<<<<< HEAD
-    for (var i = 0; i < maxNumDigits; i++) {
-        log(in[i]);
-    }
-=======
->>>>>>> main
-    
+
     signal selector[maxNumDigits] <== ArraySelector(maxNumDigits)(0, len);
     for (var i = 0; i < maxNumDigits; i++) {
         var is_less_than_max = LessThan(9)([in[i], 58]);
