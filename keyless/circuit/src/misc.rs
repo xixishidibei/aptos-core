@@ -348,3 +348,8 @@ fn email_verified_check_test() {
         }
     }
 }
+
+#[test]
+fn brackets_map_test() {
+    unimplemented!();
+}
