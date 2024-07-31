@@ -86,7 +86,7 @@ pub fn calc_string_bodies(s: &str) -> Vec<bool> {
     string_bodies
 }
 
-pub fn calc_brackets(s: &str) -> Vec<u32> {
+pub fn calc_brackets(s: &str) -> Vec<i32> {
     let bytes = s.as_bytes();
     let mut res = vec![0; s.len()];
 
@@ -96,7 +96,7 @@ pub fn calc_brackets(s: &str) -> Vec<u32> {
         println!("is_open_bracket: {:?}", is_open_bracket as u32);
         println!("is_closed_bracket: {:?}", is_closed_bracket as u32);
         println!("res: {:?}", res[i-1]);
-        res[i] = is_open_bracket as u32 - is_closed_bracket as u32 + res[i-1] as u32;
+        res[i] = is_open_bracket as i32 - is_closed_bracket as i32 + res[i-1] as i32;
     }
     res
 }
@@ -372,21 +372,27 @@ fn brackets_map_test() {
             .max_length("in", 13)
             .max_length("brackets", 13);
 
-    let input = "hell{o wor}ld";
-    let brackets = calc_brackets(&input);
-    let brackets_frs: Vec<Fr> = brackets.into_iter().map(|i| Fr::from(i)).collect();
-    let circuit_input_signals = CircuitInputSignals::new()
-        .str_input("in", input)
-        .frs_input("brackets", &brackets_frs)
-        .pad(&config)
-        .unwrap();
+    let test_cases = [("hello world{}", true), ("{}hello world", true), ("hello{} world", true), ("hell{o wor}ld", true), ("hell{o wor}ld", false)];
+    for t in test_cases {
+        let input = t.0;
+        let test_should_pass = t.1;
+        let mut brackets = calc_brackets(&input);
+        if !test_should_pass {
+            brackets[3] = 5;
+        }
+        let brackets_frs: Vec<Fr> = brackets.into_iter().map(|i| Fr::from(i)).collect();
+        let circuit_input_signals = CircuitInputSignals::new()
+            .str_input("in", input)
+            .frs_input("brackets", &brackets_frs)
+            .pad(&config)
+            .unwrap();
 
-    let result = circuit_handle.gen_witness(circuit_input_signals);
-    println!("{:?}", result);
-    let test_should_pass = true;
-    if test_should_pass {
-        assert!(result.is_ok());
-    } else {
-        assert!(result.is_err());
+        let result = circuit_handle.gen_witness(circuit_input_signals);
+        println!("{:?}", result);
+        if test_should_pass {
+            assert!(result.is_ok());
+        } else {
+            assert!(result.is_err());
+        }
     }
 }
