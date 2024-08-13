@@ -58,10 +58,10 @@ use tokio::runtime::Runtime;
 
 // This generates a proposal for round 1
 pub fn generate_corpus_proposal() -> Vec<u8> {
-    let mut round_manager = create_node_for_fuzzing();
+    let round_manager = create_node_for_fuzzing();
     block_on(async {
         let proposal = round_manager
-            .generate_proposal(NewRoundEvent {
+            .generate_proposal_for_test(NewRoundEvent {
                 round: 1,
                 reason: NewRoundReason::QCReady,
                 timeout: std::time::Duration::new(5, 0),
@@ -190,6 +190,7 @@ fn create_node_for_fuzzing() -> RoundManager {
         1,
         1024,
         10,
+        1,
         PipelineBackpressureConfig::new_no_backoff(),
         ChainHealthBackoffConfig::new_no_backoff(),
         false,

@@ -24,6 +24,7 @@ use std::{
     cmp::min,
     collections::{BTreeMap, HashMap, HashSet},
     sync::Arc,
+    time::Duration,
 };
 
 #[derive(Debug)]
@@ -206,6 +207,7 @@ impl ProofManager {
             GetPayloadCommand::GetPayloadRequest(
                 max_txns,
                 max_txns_after_filtering,
+                soft_max_txns_after_filtering,
                 max_bytes,
                 max_inline_txns,
                 max_inline_bytes,
@@ -227,6 +229,7 @@ impl ProofManager {
                         &excluded_batches,
                         max_txns,
                         max_txns_after_filtering,
+                        soft_max_txns_after_filtering,
                         max_bytes,
                         return_non_full,
                         block_timestamp,
@@ -298,6 +301,21 @@ impl ProofManager {
 
     /// return true when quorum store is back pressured
     pub(crate) fn qs_back_pressure(&self) -> BackPressure {
+        if self.remaining_total_txn_num > self.back_pressure_total_txn_limit
+            || self.remaining_total_proof_num > self.back_pressure_total_proof_limit
+        {
+            sample!(
+                SampleRate::Duration(Duration::from_millis(200)),
+                info!(
+                    "Quorum store is back pressured with {} txns, limit: {}, proofs: {}, limit: {}",
+                    self.remaining_total_txn_num,
+                    self.back_pressure_total_txn_limit,
+                    self.remaining_total_proof_num,
+                    self.back_pressure_total_proof_limit
+                );
+            );
+        }
+
         BackPressure {
             txn_count: self.remaining_total_txn_num > self.back_pressure_total_txn_limit,
             proof_count: self.remaining_total_proof_num > self.back_pressure_total_proof_limit,
