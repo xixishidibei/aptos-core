@@ -112,6 +112,7 @@ template identity(
     signal inverted_string_bodies[max_ascii_jwt_payload_len] <== InvertBinaryArray(max_ascii_jwt_payload_len)(string_bodies);
     signal brackets_map[max_ascii_jwt_payload_len] <== BracketsMap(max_ascii_jwt_payload_len)(ascii_jwt_payload);
     signal unquoted_brackets_map[max_ascii_jwt_payload_len] <== ElementwiseMul(max_ascii_jwt_payload_len)(inverted_string_bodies, brackets_map);
+    signal unquoted_filled_brackets_map[max_ascii_jwt_payload_len] <== FillBracketsMap(max_ascii_jwt_payload_len)(unquoted_brackets_map);
 
     // Check aud field is in the JWT
     signal input aud_field[maxAudKVPairLen]; // ASCII
@@ -122,7 +123,7 @@ template identity(
     CheckSubstrInclusionPoly(max_ascii_jwt_payload_len, maxAudKVPairLen)(string_bodies, ascii_jwt_payload_hash, aud_field_string_bodies, aud_field_len, aud_index); 
 
     signal aud_brackets_selector[max_ascii_jwt_payload_len] <== ArraySelector(max_ascii_jwt_payload_len)(aud_index, aud_index+aud_field_len);
-    signal aud_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(brackets_map, aud_brackets_selector);
+    signal aud_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(unquoted_filled_brackets_map, aud_brackets_selector);
     aud_is_nested === 0;
 
     // Perform necessary checks on aud field
@@ -165,7 +166,7 @@ template identity(
 
 
     signal uid_brackets_selector[max_ascii_jwt_payload_len] <== ArraySelector(max_ascii_jwt_payload_len)(uid_index, uid_index+uid_field_len);
-    signal uid_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(brackets_map, uid_brackets_selector);
+    signal uid_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(unquoted_filled_brackets_map, uid_brackets_selector);
     uid_is_nested === 0;
 
     // Perform necessary checks on user id field. Some fields this might be in practice are "sub" or "email"
@@ -188,7 +189,7 @@ template identity(
     signal ef_passes <== CheckSubstrInclusionPolyBoolean(max_ascii_jwt_payload_len, maxEFKVPairLen)(ascii_jwt_payload, ascii_jwt_payload_hash, extra_field, extra_field_len, extra_index);
 
     signal extra_brackets_selector[max_ascii_jwt_payload_len] <== ArraySelector(max_ascii_jwt_payload_len)(extra_index, extra_index+extra_field_len);
-    signal extra_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(brackets_map, extra_brackets_selector);
+    signal extra_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(unquoted_filled_brackets_map, extra_brackets_selector);
     extra_is_nested === 0;
 
     // Fail if use_extra_field = 1 and ef_passes = 0
@@ -227,7 +228,7 @@ template identity(
     ev_fail === 0;
 
     signal ev_brackets_selector[max_ascii_jwt_payload_len] <== ArraySelector(max_ascii_jwt_payload_len)(ev_index, ev_index+ev_field_len);
-    signal ev_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(brackets_map, ev_brackets_selector);
+    signal ev_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(unquoted_filled_brackets_map, ev_brackets_selector);
     ev_is_nested === 0;
 
     // Need custom logic here because some providers apparently do not follow the OIDC spec and put the email_verified value in quotes
@@ -243,7 +244,7 @@ template identity(
     CheckSubstrInclusionPoly(max_ascii_jwt_payload_len, maxIssKVPairLen)(string_bodies, ascii_jwt_payload_hash, iss_field_string_bodies, iss_field_len, iss_index);
 
     signal iss_brackets_selector[max_ascii_jwt_payload_len] <== ArraySelector(max_ascii_jwt_payload_len)(iss_index, iss_index+iss_field_len);
-    signal iss_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(brackets_map, iss_brackets_selector);
+    signal iss_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(unquoted_filled_brackets_map, iss_brackets_selector);
     iss_is_nested === 0;
 
     // Perform necessary checks on iss field
@@ -279,7 +280,7 @@ template identity(
     ParseJWTFieldWithUnquotedValue(maxIatKVPairLen, maxIatNameLen, maxIatValueLen)(iat_field, iat_name, iat_value, iat_field_len, iat_name_len, iat_value_index, iat_value_len, iat_colon_index);
 
     signal iat_brackets_selector[max_ascii_jwt_payload_len] <== ArraySelector(max_ascii_jwt_payload_len)(iat_index, iat_index+iat_field_len);
-    signal iat_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(brackets_map, iat_brackets_selector);
+    signal iat_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(unquoted_filled_brackets_map, iat_brackets_selector);
     iat_is_nested === 0;
 
     // Check that iat is not inside a string body
@@ -308,7 +309,7 @@ template identity(
     CheckSubstrInclusionPoly(max_ascii_jwt_payload_len, maxNonceKVPairLen)(string_bodies, ascii_jwt_payload_hash, nonce_field_string_bodies, nonce_field_len, nonce_index);
 
     signal nonce_brackets_selector[max_ascii_jwt_payload_len] <== ArraySelector(max_ascii_jwt_payload_len)(nonce_index, nonce_index+nonce_field_len);
-    signal nonce_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(brackets_map, nonce_brackets_selector);
+    signal nonce_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(unquoted_filled_brackets_map, nonce_brackets_selector);
     nonce_is_nested === 0;
 
     // Perform necessary checks on nonce field
