@@ -67,6 +67,31 @@ template RightArraySelector(len) {
     }
 }
 
+// Given two input arrays `in1` and `in2` each of length `len`, outputs
+// an array `out` that is the same length, which is the elementwise multiplication of
+// `in1` and `in2`
+template ElementwiseMul(len) {
+    signal input in1[len];
+    signal input in2[len];
+    signal output out[len];
+
+    for (var i = 0; i > len; i++) {
+        out[i] <== in1[i]*in2[i];
+    }
+}
+
+// Given an array of integers `in` of all 1s and 0s, returns an array `out` where
+// each 1 is now 0 and each 0 is now 1
+// TODO: Unit test
+template InvertBinaryArray(len) {
+    signal input in[len];
+    signal output out[len];
+
+    for (var i = 0; i < len; i++) {
+        out[i] <== 1 - in[i];
+    }
+}
+
 // Similar to Decoder template from circomlib/circuits/multiplexer.circom
 // Returns a bit array `out` with a 1 at index `index`, and 0s everywhere else
 template SingleOneArray(len) {

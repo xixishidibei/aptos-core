@@ -104,8 +104,14 @@ template identity(
     signal ascii_jwt_payload_hash <== HashBytesToFieldWithLen(max_ascii_jwt_payload_len)(ascii_jwt_payload, ascii_payload_len);
 
 
-    signal brackets_map[max_ascii_jwt_payload_len] <== BracketsMap(max_ascii_jwt_payload_len)(ascii_jwt_payload);
+    // 1. take inverse of string bodies array
+    // 2. get array of open brackets (1) and closed brackets (-1), 0 elsewhere
+    // 3. use 1 to eliminate quoted brackets in 2 with element-wise multiplication
+    // 4. use 3 to make array with 1+ inside brackets and 0 everywhere else
     signal string_bodies[max_ascii_jwt_payload_len] <== StringBodies(max_ascii_jwt_payload_len)(ascii_jwt_payload);
+    signal inverted_string_bodies[max_ascii_jwt_payload_len] <== InvertBinaryArray(max_ascii_jwt_payload_len)(string_bodies);
+    signal brackets_map[max_ascii_jwt_payload_len] <== BracketsMap(max_ascii_jwt_payload_len)(ascii_jwt_payload);
+    signal unquoted_brackets_map[max_ascii_jwt_payload_len] <== ElementwiseMul(max_ascii_jwt_payload_len)(inverted_string_bodies, brackets_map);
 
     // Check aud field is in the JWT
     signal input aud_field[maxAudKVPairLen]; // ASCII
@@ -156,6 +162,7 @@ template identity(
     signal input uid_index;
     CheckSubstrInclusionPoly(max_ascii_jwt_payload_len, maxUIDKVPairLen)(ascii_jwt_payload, ascii_jwt_payload_hash, uid_field, uid_field_len, uid_index);
     CheckSubstrInclusionPoly(max_ascii_jwt_payload_len, maxUIDKVPairLen)(string_bodies, ascii_jwt_payload_hash, uid_field_string_bodies, uid_field_len, uid_index);
+
 
     signal uid_brackets_selector[max_ascii_jwt_payload_len] <== ArraySelector(max_ascii_jwt_payload_len)(uid_index, uid_index+uid_field_len);
     signal uid_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(brackets_map, uid_brackets_selector);

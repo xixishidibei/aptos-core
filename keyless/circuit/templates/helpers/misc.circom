@@ -140,15 +140,37 @@ template StringBodies(len) {
   }
 }
 
+// Given an array of ASCII characters `arr`, returns an array `brackets` with
+// a 1 in the position of each open bracket `{`, a -1 in the position of each closed bracket `}`
+// and 0 everywhere else
 template BracketsMap(len) {
     signal input arr[len];
     signal output brackets[len];
 
     brackets[0] <== 0;
     for (var i = 1; i < len; i++) {
-        var is_open_bracket = IsEqual()([arr[i], 123]);
-        var is_closed_bracket = IsEqual()([arr[i], 125]);
-        brackets[i] <== is_open_bracket + brackets[i-1] - is_closed_bracket;
+        var is_open_bracket = IsEqual()([arr[i], 123]); // 123 = `{`
+        var is_closed_bracket = IsEqual()([arr[i], 125]); // 125 = '}'
+        brackets[i] <== is_open_bracket + (0-is_closed_bracket);
+    }
+}
+
+// Given an input array `arr` of length `len`, outputs an array `out` which
+// at each index, contains positive integers in between the spaces of open brackets
+// which have not been closed, where open brackets are represented by '1', and
+// closed brackets are represented by `0`.
+// EXCEPTIONS: The index of the second-to-last closed bracket will contain a `0`
+// The first character is skipped - in our specific application we always expect an
+// open bracket in the first JWT character
+template FillBracketsMap(len) {
+    signal input arr[len];
+    signal output out[len];
+
+    out[0] <== 0;
+    for (var i = 1; i < len; i++) {
+        var is_open_bracket = IsEqual()([arr[i], 1]);
+        var is_closed_bracket = IsEqual()([arr[i], -1]);
+        out[i] <== is_open_bracket + out[i-1] - is_closed_bracket;
     }
 }
 
