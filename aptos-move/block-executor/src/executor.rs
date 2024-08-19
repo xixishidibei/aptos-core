@@ -102,6 +102,7 @@ where
         idx_to_execute: TxnIndex,
         incarnation: Incarnation,
         is_backup: bool,
+        called_after_commit: bool,
         scheduler: &Scheduler,
         signature_verified_block: &[T],
         last_input_output: &TxnLastInputOutput<T, E::Output, E::Error>,
@@ -134,27 +135,34 @@ where
 
         let mut read_set = sync_view.take_parallel_reads();
 
-        let validation_function = if is_backup {
-            None
-        } else {
-            Some(|| -> bool {
-                !read_set.is_incorrect_use()
-                    && read_set.validate_data_reads(versioned_cache.data(), idx_to_execute)
-                    && read_set.validate_group_reads(versioned_cache.group_data(), idx_to_execute)
-            })
-        };
+        let mut ret_mode = ValidationMode::SelfOnly;
 
-        let mut ret_mode = if let Some(is_validated) =
-            scheduler.try_set_execution_flag_writing(idx_to_execute, validation_function)
-        {
-            if is_validated {
-                ValidationMode::None
+        if !called_after_commit {
+            let validation_function = if is_backup {
+                None
             } else {
-                ValidationMode::SelfOnly
-            }
-        } else {
-            return Ok(None);
-        };
+                Some(|| -> bool {
+                    !read_set.is_incorrect_use()
+                        && read_set.validate_data_reads(versioned_cache.data(), idx_to_execute)
+                        && read_set
+                            .validate_group_reads(versioned_cache.group_data(), idx_to_execute)
+                })
+            };
+
+            ret_mode = if let Some(is_validated) =
+                scheduler.try_set_execution_flag_writing(idx_to_execute, validation_function)
+            {
+                if is_validated {
+                    ValidationMode::None
+                } else {
+                    ValidationMode::SelfOnly
+                }
+            } else {
+                return Ok(None);
+            };
+        }
+
+        //let mut ret_mode = ValidationMode::SelfOnly;
 
         let mut prev_modified_keys = last_input_output
             .modified_keys(idx_to_execute)
@@ -557,6 +565,7 @@ where
                     txn_idx,
                     incarnation + 1,
                     false,
+                    true,
                     scheduler,
                     block,
                     last_input_output,
@@ -893,7 +902,6 @@ where
             }
             Ok(())
         };
-
         loop {
             // If not enabled, everyone tries to commit. o.w., first num_commiters workers.
             if !enable_special_committers || worker_id < num_committers {
@@ -936,6 +944,7 @@ where
                                 next_commit_idx,
                                 incarnation,
                                 true,
+                                false,
                                 scheduler,
                                 block,
                                 last_input_output,
@@ -999,6 +1008,7 @@ where
                     if let Some(validation_mode) = Self::execute(
                         txn_idx,
                         incarnation,
+                        false,
                         false,
                         scheduler,
                         block,
