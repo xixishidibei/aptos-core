@@ -70,6 +70,7 @@ template RightArraySelector(len) {
 // Given two input arrays `in1` and `in2` each of length `len`, outputs
 // an array `out` that is the same length, which is the elementwise multiplication of
 // `in1` and `in2`
+// TODO: Unit test
 template ElementwiseMul(len) {
     signal input in1[len];
     signal input in2[len];

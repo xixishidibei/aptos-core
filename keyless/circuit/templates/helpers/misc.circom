@@ -98,7 +98,9 @@ template EmailVerifiedCheck(maxEVNameLen, maxEVValueLen, maxUIDNameLen) {
     }
 }
 
-
+// Given an array `in` of ASCII characters of size `len`, outputs an array `out` marking
+// the spaces in between quotes, so that the indices in between quotes in `in` are given the value
+// `1` in `out`, and are 0 otherwise. I.e. in = He"llo w"orld! -> out = 00011111000000
 template StringBodies(len) {
   signal input in[len];
   signal output out[len];
@@ -143,6 +145,7 @@ template StringBodies(len) {
 // Given an array of ASCII characters `arr`, returns an array `brackets` with
 // a 1 in the position of each open bracket `{`, a -1 in the position of each closed bracket `}`
 // and 0 everywhere else
+// TODO: Unit test
 template BracketsMap(len) {
     signal input arr[len];
     signal output brackets[len];
@@ -162,6 +165,7 @@ template BracketsMap(len) {
 // EXCEPTIONS: The index of the second-to-last closed bracket will contain a `0`
 // The first character is skipped - in our specific application we always expect an
 // open bracket in the first JWT character
+// TODO: Unit test
 template FillBracketsMap(len) {
     signal input arr[len];
     signal output out[len];
