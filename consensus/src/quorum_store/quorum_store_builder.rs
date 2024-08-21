@@ -446,6 +446,7 @@ impl InnerBuilder {
                 self.coordinator_tx.clone(),
                 consensus_publisher,
                 self.verifier.get_ordered_account_addresses(),
+                self.verifier.address_to_validator_index().clone(),
             )),
             Some(self.quorum_store_msg_tx.clone()),
         )

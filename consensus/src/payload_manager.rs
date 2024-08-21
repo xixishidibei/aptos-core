@@ -10,6 +10,7 @@ use crate::{
     counters,
     quorum_store::{batch_store::BatchReader, quorum_store_coordinator::CoordinatorCommand},
 };
+use aptos_bitvec::BitVec;
 use aptos_consensus_types::{
     block::Block,
     common::{DataStatus, Payload, ProofWithData, Round},
@@ -27,7 +28,7 @@ use aptos_types::{transaction::SignedTransaction, PeerId};
 use async_trait::async_trait;
 use futures::{channel::mpsc::Sender, FutureExt};
 use std::{
-    collections::{btree_map::Entry, BTreeMap},
+    collections::{btree_map::Entry, BTreeMap, HashMap},
     ops::Deref,
     sync::Arc,
 };
@@ -48,7 +49,7 @@ pub trait TPayloadManager: Send + Sync {
     /// Check if the transactions corresponding are available. This is specific to payload
     /// manager implementations. For optimistic quorum store, we only check if optimistic
     /// batches are available locally.
-    fn check_payload_availability(&self, block: &Block) -> bool;
+    fn check_payload_availability(&self, block: &Block) -> Result<(), BitVec>;
 
     /// Get the transactions in a block's payload. This function returns a vector of transactions.
     async fn get_transactions(
@@ -72,8 +73,8 @@ impl TPayloadManager for DirectMempoolPayloadManager {
 
     fn prefetch_payload_data(&self, _payload: &Payload, _timestamp: u64) {}
 
-    fn check_payload_availability(&self, _block: &Block) -> bool {
-        true
+    fn check_payload_availability(&self, _block: &Block) -> Result<(), BitVec> {
+        Ok(())
     }
 
     async fn get_transactions(
@@ -103,6 +104,7 @@ pub struct QuorumStorePayloadManager {
     coordinator_tx: Sender<CoordinatorCommand>,
     maybe_consensus_publisher: Option<Arc<ConsensusPublisher>>,
     ordered_authors: Vec<PeerId>,
+    address_to_validator_index: HashMap<PeerId, usize>,
 }
 
 impl QuorumStorePayloadManager {
@@ -111,12 +113,14 @@ impl QuorumStorePayloadManager {
         coordinator_tx: Sender<CoordinatorCommand>,
         maybe_consensus_publisher: Option<Arc<ConsensusPublisher>>,
         ordered_authors: Vec<PeerId>,
+        address_to_validator_index: HashMap<PeerId, usize>,
     ) -> Self {
         Self {
             batch_reader,
             coordinator_tx,
             maybe_consensus_publisher,
             ordered_authors,
+            address_to_validator_index,
         }
     }
 
@@ -294,25 +298,34 @@ impl TPayloadManager for QuorumStorePayloadManager {
         };
     }
 
-    fn check_payload_availability(&self, block: &Block) -> bool {
+    fn check_payload_availability(&self, block: &Block) -> Result<(), BitVec> {
         let Some(payload) = block.payload() else {
-            return true;
+            return Ok(());
         };
 
         match payload {
             Payload::DirectMempool(_) => {
                 unreachable!("QuorumStore doesn't support DirectMempool payload")
             },
-            Payload::InQuorumStore(_) => true,
-            Payload::InQuorumStoreWithLimit(_) => true,
-            Payload::QuorumStoreInlineHybrid(_, _, _) => true,
+            Payload::InQuorumStore(_) => Ok(()),
+            Payload::InQuorumStoreWithLimit(_) => Ok(()),
+            Payload::QuorumStoreInlineHybrid(_, _, _) => Ok(()),
             Payload::OptQuorumStore(opt_qs_payload) => {
+                let mut missing_authors = BitVec::with_num_bits(self.ordered_authors.len() as u16);
                 for batch in opt_qs_payload.opt_batches().deref() {
-                    if self.batch_reader.exists(batch.digest()).is_none() {
-                        return false;
+                    if let None = self.batch_reader.exists(batch.digest()) {
+                        let index = *self
+                            .address_to_validator_index
+                            .get(&batch.author())
+                            .expect("Payload author should have ben verified");
+                        missing_authors.set(index as u16);
                     }
                 }
-                true
+                if missing_authors.all_zeros() {
+                    Ok(())
+                } else {
+                    Err(missing_authors)
+                }
             },
         }
     }
@@ -685,7 +698,7 @@ impl TPayloadManager for ConsensusObserverPayloadManager {
         // noop
     }
 
-    fn check_payload_availability(&self, _block: &Block) -> bool {
+    fn check_payload_availability(&self, _block: &Block) -> Result<(), BitVec> {
         unreachable!("this method isn't used in ConsensusObserver")
     }
 

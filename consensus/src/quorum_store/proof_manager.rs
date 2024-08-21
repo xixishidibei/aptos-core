@@ -107,9 +107,14 @@ impl ProofManager {
                     PayloadFilter::InQuorumStore(proofs) => proofs,
                 };
 
-                let max_txns_with_proof = request
-                    .max_txns
-                    .compute_pct(100 - request.opt_batch_txns_pct);
+                let max_txns_with_proof =
+                    if let Some(params) = request.maybe_optqs_payload_pull_params {
+                        request
+                            .max_txns
+                            .compute_pct(100 - params.opt_batch_txns_pct)
+                    } else {
+                        request.max_txns
+                    };
 
                 let (
                     proof_block,
