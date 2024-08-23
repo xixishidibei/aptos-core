@@ -145,7 +145,6 @@ template StringBodies(len) {
 // Given an array of ASCII characters `arr`, returns an array `brackets` with
 // a 1 in the position of each open bracket `{`, a -1 in the position of each closed bracket `}`
 // and 0 everywhere else
-// TODO: Unit test
 template BracketsMap(len) {
     signal input arr[len];
     signal output brackets[len];

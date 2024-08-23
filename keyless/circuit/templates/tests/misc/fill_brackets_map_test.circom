@@ -9,6 +9,9 @@ template fill_brackets_map_test() {
     component brackets_map = FillBracketsMap(len);
     brackets_map.arr <== in;
     for (var i = 0; i < len; i++) {
+        log("out ", i, ": ", brackets_map.out[i]);
+    }
+    for (var i = 0; i < len; i++) {
         brackets[i] === brackets_map.out[i];
     }
 }
