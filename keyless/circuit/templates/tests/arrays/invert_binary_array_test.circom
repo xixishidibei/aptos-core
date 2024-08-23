@@ -9,7 +9,6 @@ template invert_binary_array_test(len) {
     signal out[len] <== InvertBinaryArray(len)(in);
     for (var i = 0; i < len; i++) {
         out[i] === expected_out[i];
-        log("out: ", out[i]);
     }
 }
 

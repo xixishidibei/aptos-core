@@ -39,6 +39,29 @@ fn invert_binary_array_test() {
 }
 
 #[test]
+// TODO: Make unit test more comprehensive
+fn elementwise_mul_test() {
+    let circuit_handle = TestCircuitHandle::new("arrays/elementwise_mul_test.circom").unwrap();
+    let test_case_left = [5, 2, 3, 4];
+    let test_case_right = [3, 2, 3, 4];
+    let output: Vec<u8> = test_case_left.into_iter().zip(test_case_right).map(|(x,y)| x * y).collect();
+    let config =
+        CircuitPaddingConfig::new().max_length("left", output.len() as usize)
+                                   .max_length("right", output.len() as usize)
+
+                                   .max_length("expected_out", output.len() as usize);
+    let circuit_input_signals = CircuitInputSignals::new()
+        .bytes_input("left", &test_case_left)
+        .bytes_input("right", &test_case_right)
+        .bytes_input("expected_out", &output)
+        .pad(&config)
+        .unwrap();
+    let result = circuit_handle.gen_witness(circuit_input_signals);
+    assert!(result.is_ok());
+}
+
+#[test]
+// TODO: Make unit test more comprehensive
 fn array_selector_test() {
     let circuit_handle = TestCircuitHandle::new("arrays/array_selector_test.circom").unwrap();
     let out_len = 8;
