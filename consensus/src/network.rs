@@ -29,6 +29,7 @@ use aptos_consensus_types::{
     pipeline::{commit_decision::CommitDecision, commit_vote::CommitVote},
     proof_of_store::{ProofOfStore, ProofOfStoreMsg, SignedBatchInfo, SignedBatchInfoMsg},
     proposal_msg::ProposalMsg,
+    round_timeout::RoundTimeoutMsg,
     sync_info::SyncInfo,
     vote_msg::VoteMsg,
 };
@@ -405,6 +406,12 @@ impl NetworkSender {
         self.broadcast(msg).await
     }
 
+    pub async fn broadcast_round_timeout(&self, round_timeout: RoundTimeoutMsg) {
+        fail_point!("consensus::send::vote", |_| ());
+        let msg = ConsensusMsg::RoundTimeoutMsg(Box::new(round_timeout));
+        self.broadcast(msg).await
+    }
+
     pub async fn broadcast_order_vote(&self, order_vote_msg: OrderVoteMsg) {
         fail_point!("consensus::send::order_vote", |_| ());
         let msg = ConsensusMsg::OrderVoteMsg(Box::new(order_vote_msg));
@@ -749,6 +756,7 @@ impl NetworkTask {
                         },
                         consensus_msg @ (ConsensusMsg::ProposalMsg(_)
                         | ConsensusMsg::VoteMsg(_)
+                        | ConsensusMsg::RoundTimeoutMsg(_)
                         | ConsensusMsg::OrderVoteMsg(_)
                         | ConsensusMsg::SyncInfo(_)
                         | ConsensusMsg::EpochRetrievalRequest(_)
