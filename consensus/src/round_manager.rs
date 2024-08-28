@@ -8,10 +8,7 @@ use crate::{
         BlockReader, BlockRetriever, BlockStore, NeedFetchResult,
     },
     counters::{
-        self, ORDER_CERT_CREATED_WITHOUT_BLOCK_IN_BLOCK_STORE, ORDER_VOTE_ADDED,
-        ORDER_VOTE_BROADCASTED, ORDER_VOTE_OTHER_ERRORS, ORDER_VOTE_VERY_OLD, PROPOSAL_VOTE_ADDED,
-        PROPOSAL_VOTE_BROADCASTED, PROPOSED_VTXN_BYTES, PROPOSED_VTXN_COUNT,
-        QC_AGGREGATED_FROM_VOTES, SYNC_INFO_RECEIVED_WITH_NEWER_CERT,
+        self, NUM_PRE_COMMIT_VOTED_BLOCKS, ORDER_CERT_CREATED_WITHOUT_BLOCK_IN_BLOCK_STORE, ORDER_VOTE_ADDED, ORDER_VOTE_BROADCASTED, ORDER_VOTE_OTHER_ERRORS, ORDER_VOTE_VERY_OLD, PROPOSAL_VOTE_ADDED, PROPOSAL_VOTE_BROADCASTED, PROPOSED_VTXN_BYTES, PROPOSED_VTXN_COUNT, QC_AGGREGATED_FROM_VOTES, SYNC_INFO_RECEIVED_WITH_NEWER_CERT
     }, error::{error_kind, VerifyError}, liveness::{
         proposal_generator::ProposalGenerator,
         proposer_election::ProposerElection,
@@ -1005,7 +1002,7 @@ impl RoundManager {
                     .await;
             }
 
-            self.broadcast_precommit_vote(vote.ledger_info().commit_info().clone(), consensus_data_hash).await;
+            // self.broadcast_precommit_vote(vote.ledger_info().commit_info().clone(), consensus_data_hash).await;
         }
 
         if self.local_config.broadcast_vote {
@@ -1180,6 +1177,7 @@ impl RoundManager {
                                 Ok(signature) => {
                                     let commit_vote = CommitVote::new_with_signature(author, commit_ledger_info, signature);
                                     network.broadcast_commit_vote(commit_vote).await;
+                                    NUM_PRE_COMMIT_VOTED_BLOCKS.inc();
                                 },
                                 Err(e) => {
                                     warn!("[PreExecution] Failed to sign commit vote: {:?}", e);
