@@ -477,7 +477,7 @@ impl ProposalGenerator {
                         pending_uncommitted_blocks: pending_blocks.len(),
                         recent_max_fill_fraction: max_fill_fraction,
                         block_timestamp: timestamp,
-                        return_all_txns: skip_non_rand_blocks,
+                        return_all_txns: false,
                     },
                     validator_txn_filter,
                     wait_callback,
@@ -509,15 +509,15 @@ impl ProposalGenerator {
             proposer_election,
         );
 
-        // Check if the block contains any randomness transaction
-        let maybe_require_randomness = skip_non_rand_blocks.then(|| {
-            all_txns.par_iter().any(|txn| {
-                self.validator.read().check_randomness(txn)
-            })
-        });
+        // // Check if the block contains any randomness transaction
+        // let maybe_require_randomness = skip_non_rand_blocks.then(|| {
+        //     all_txns.par_iter().any(|txn| {
+        //         self.validator.read().check_randomness(txn)
+        //     })
+        // });
 
-        observe_block(timestamp, BlockStage::CHECKED_RAND);
-        info!("[ProposalGeneration] Check randomness took: {:?}, round {}, maybe_require_randomness {:?}", self.time_service.get_current_timestamp() - start_time, round, maybe_require_randomness);
+        // observe_block(timestamp, BlockStage::CHECKED_RAND);
+        // info!("[ProposalGeneration] Check randomness took: {:?}, round {}, maybe_require_randomness {:?}", self.time_service.get_current_timestamp() - start_time, round, maybe_require_randomness);
 
         let block = if self.vtxn_config.enabled() {
             BlockData::new_proposal_ext(
@@ -528,7 +528,7 @@ impl ProposalGenerator {
                 round,
                 timestamp,
                 quorum_cert,
-                maybe_require_randomness,
+                Some(false),
             )
         } else {
             BlockData::new_proposal(
