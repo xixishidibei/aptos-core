@@ -1152,7 +1152,6 @@ impl RoundManager {
             return;
         }
         let block_id = block_info.id();
-        let execution_futures = self.execution_futures.clone();
         let author = self.proposal_generator.author();
         let safety_rules = self.safety_rules.clone();
         let network = self.network.clone();
@@ -1160,36 +1159,38 @@ impl RoundManager {
         match self.execution_futures.entry(block_id) {
             dashmap::mapref::entry::Entry::Occupied(entry) => {
                 let fut = entry.get().clone();
-                match fut.await {
-                    Ok(execution_result) => {
-                        let commit_info = BlockInfo::new(
-                            block_info.epoch(),
-                            block_info.round(),
-                            block_id,
-                            execution_result.result.root_hash(),
-                            execution_result.result.version(),
-                            block_info.timestamp_usecs(),
-                            execution_result.result.epoch_state().clone(),
-                        );
+                tokio::spawn(async move {
+                    match fut.await {
+                        Ok(execution_result) => {
+                            let commit_info = BlockInfo::new(
+                                block_info.epoch(),
+                                block_info.round(),
+                                block_id,
+                                execution_result.result.root_hash(),
+                                execution_result.result.version(),
+                                block_info.timestamp_usecs(),
+                                execution_result.result.epoch_state().clone(),
+                            );
 
-                        info!("[PreExecution] broadcast commit vote for block of epoch {} round {} id {}", block_info.epoch(), block_info.round(), block_id);
+                            info!("[PreExecution] broadcast commit vote for block of epoch {} round {} id {}", block_info.epoch(), block_info.round(), block_id);
 
-                        let commit_ledger_info = LedgerInfo::new(commit_info, consensus_data_hash);
-                        let signature = safety_rules.lock().sign_pre_commit_vote(commit_ledger_info.clone());
-                        match signature{
-                            Ok(signature) => {
-                                let commit_vote = CommitVote::new_with_signature(author, commit_ledger_info, signature);
-                                network.broadcast_commit_vote(commit_vote).await;
-                            },
-                            Err(e) => {
-                                warn!("[PreExecution] Failed to sign commit vote: {:?}", e);
+                            let commit_ledger_info = LedgerInfo::new(commit_info, consensus_data_hash);
+                            let signature = safety_rules.lock().sign_pre_commit_vote(commit_ledger_info.clone());
+                            match signature{
+                                Ok(signature) => {
+                                    let commit_vote = CommitVote::new_with_signature(author, commit_ledger_info, signature);
+                                    network.broadcast_commit_vote(commit_vote).await;
+                                },
+                                Err(e) => {
+                                    warn!("[PreExecution] Failed to sign commit vote: {:?}", e);
+                                }
                             }
+                        },
+                        Err(e) => {
+                            warn!("[PreExecution] Failed to execute block: {:?}", e);
                         }
-                    },
-                    Err(e) => {
-                        warn!("[PreExecution] Failed to execute block: {:?}", e);
-                    }
-                }
+                    };
+                });
             }
             dashmap::mapref::entry::Entry::Vacant(_) => {}
         }
