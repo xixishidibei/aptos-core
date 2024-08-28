@@ -32,7 +32,7 @@ use aptos_storage_interface::{DbReader, DbReaderWriter};
 use aptos_time_service::TimeService;
 use aptos_types::{chain_id::ChainId, indexer::indexer_db_reader::IndexerReader};
 use aptos_validator_transaction_pool::VTxnPoolState;
-use futures::channel::{mpsc, mpsc::Sender};
+use futures::channel::{mpsc, mpsc::Sender, oneshot};
 use std::{sync::Arc, time::Instant};
 use tokio::runtime::{Handle, Runtime};
 
@@ -46,6 +46,8 @@ pub fn bootstrap_api_and_indexer(
     db_rw: DbReaderWriter,
     chain_id: ChainId,
     internal_indexer_db: Option<InternalIndexerDB>,
+    api_port_tx: Option<oneshot::Sender<u16>>,
+    indexer_grpc_port_tx: Option<oneshot::Sender<u16>>,
 ) -> anyhow::Result<(
     Receiver<MempoolClientRequest>,
     Option<Runtime>,
@@ -89,6 +91,7 @@ pub fn bootstrap_api_and_indexer(
             db_rw.reader.clone(),
             mempool_client_sender.clone(),
             indexer_reader.clone(),
+            api_port_tx,
         )?)
     } else {
         None
@@ -101,6 +104,7 @@ pub fn bootstrap_api_and_indexer(
         db_rw.reader.clone(),
         mempool_client_sender.clone(),
         indexer_reader,
+        indexer_grpc_port_tx,
     );
 
     // Create the indexer runtime
