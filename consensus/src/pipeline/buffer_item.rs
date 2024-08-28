@@ -424,7 +424,7 @@ impl BufferItem {
                         .add_signature(author, signature);
                     return Ok(());
                 } else {
-                    return Err(anyhow!("Inconsistent commit info {} vs {}", ordered.ordered_proof.commit_info(), target_commit_info));
+                    return Err(anyhow!("Inconsistent commit info ordered {} vs {}", ordered.ordered_proof.commit_info(), target_commit_info));
                 }
             },
             Self::Executed(executed) => {
@@ -434,7 +434,7 @@ impl BufferItem {
                         .add_signature(author, signature);
                     return Ok(());
                 } else {
-                    return Err(anyhow!("Inconsistent commit info {} vs {}", executed.commit_info, target_commit_info));
+                    return Err(anyhow!("Inconsistent commit info executed {} vs {}", executed.commit_info, target_commit_info));
                 }
             },
             Self::Signed(signed) => {
@@ -442,7 +442,7 @@ impl BufferItem {
                     signed.partial_commit_proof.add_signature(author, signature);
                     return Ok(());
                 } else {
-                    return Err(anyhow!("Inconsistent commit info {} vs {}", signed.partial_commit_proof.commit_info(), target_commit_info));
+                    return Err(anyhow!("Inconsistent commit info signed {} vs {}", signed.partial_commit_proof.commit_info(), target_commit_info));
                 }
             },
             Self::Aggregated(aggregated) => {
@@ -451,7 +451,7 @@ impl BufferItem {
                 if aggregated.commit_proof.commit_info() == target_commit_info {
                     return Ok(());
                 } else {
-                    return Err(anyhow!("Inconsistent commit info {} vs {}", aggregated.commit_proof.commit_info(), target_commit_info));
+                    return Err(anyhow!("Inconsistent commit info aggregated {} vs {}", aggregated.commit_proof.commit_info(), target_commit_info));
                 }
             },
         }
