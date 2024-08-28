@@ -117,23 +117,6 @@ pub fn fill_brackets(s: &Vec<i32>) -> Vec<i32> {
     res
 }
 
-// TODO: Delete
-/*pub fn calc_brackets(s: &str) -> Vec<i32> {
-    let bytes = s.as_bytes();
-    let mut res = vec![0; s.len()];
-
-    for i in 1..bytes.len() {
-        let is_open_bracket = bytes[i] == b'{';
-        let is_closed_bracket = bytes[i] == b'}';
-        println!("is_open_bracket: {:?}", is_open_bracket as u32);
-        println!("is_closed_bracket: {:?}", is_closed_bracket as u32);
-        println!("res: {:?}", res[i-1]);
-        res[i] = is_open_bracket as i32 - is_closed_bracket as i32 + res[i-1] as i32;
-    }
-    res
-}*/
-
-
 #[test]
 fn is_whitespace_test() {
     let circuit_handle = TestCircuitHandle::new("misc/is_whitespace_test.circom").unwrap();
@@ -398,7 +381,7 @@ fn email_verified_check_test() {
 }
 
 #[test]
-// TODO: Extend this?
+// TODO: Extend this
 fn brackets_map_test() {
     let circuit_handle = TestCircuitHandle::new("misc/brackets_map_test.circom").unwrap();
     let config = CircuitPaddingConfig::new()
