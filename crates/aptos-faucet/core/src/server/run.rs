@@ -821,10 +821,10 @@ mod test {
 
         // Assert that the account exists now with the expected balance.
         let response = aptos_node_api_client
-            .get_account_balance(AccountAddress::from_str(&fund_request.address.unwrap()).unwrap())
+            .view_account_balance(AccountAddress::from_str(&fund_request.address.unwrap()).unwrap())
             .await?;
 
-        assert_eq!(response.into_inner().get(), 10);
+        assert_eq!(response.into_inner(), 10);
 
         Ok(())
     }
@@ -879,10 +879,12 @@ mod test {
 
         // Assert that the account exists now with the expected balance.
         let response = aptos_node_api_client
-            .get_account_balance(AccountAddress::from_str(&fund_request.address.unwrap()).unwrap())
+            .view_apt_account_balance(
+                AccountAddress::from_str(&fund_request.address.unwrap()).unwrap(),
+            )
             .await?;
 
-        assert_eq!(response.into_inner().get(), 10);
+        assert_eq!(response.into_inner(), 10);
 
         Ok(())
     }
@@ -927,10 +929,12 @@ mod test {
 
         // Confirm that the account was given the full 1000 OCTA as requested.
         let response = aptos_node_api_client
-            .get_account_balance(AccountAddress::from_str(&fund_request.address.unwrap()).unwrap())
+            .view_apt_account_balance(
+                AccountAddress::from_str(&fund_request.address.unwrap()).unwrap(),
+            )
             .await?;
 
-        assert_eq!(response.into_inner().get(), 1000);
+        assert_eq!(response.into_inner(), 1000);
 
         // This time, don't include the auth token. We request more than maximum_amount,
         // but later we'll see that the faucet will only give us maximum_amount, not
@@ -945,10 +949,12 @@ mod test {
 
         // Confirm that the account was only given 100 OCTA (maximum_amount), not 1000.
         let response = aptos_node_api_client
-            .get_account_balance(AccountAddress::from_str(&fund_request.address.unwrap()).unwrap())
+            .view_apt_account_balance(
+                AccountAddress::from_str(&fund_request.address.unwrap()).unwrap(),
+            )
             .await?;
 
-        assert_eq!(response.into_inner().get(), 100);
+        assert_eq!(response.into_inner(), 100);
 
         Ok(())
     }
