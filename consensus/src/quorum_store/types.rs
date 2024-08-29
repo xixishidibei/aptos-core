@@ -10,14 +10,13 @@ use aptos_crypto::{hash::CryptoHash, HashValue};
 use aptos_types::{ledger_info::LedgerInfoWithSignatures, transaction::SignedTransaction, PeerId};
 use serde::{Deserialize, Serialize};
 use std::{
-    fmt::{Display, Formatter},
-    ops::Deref,
+    fmt::{Display, Formatter}, mem, ops::Deref, sync::Arc
 };
 
 #[derive(Clone, Eq, Deserialize, Serialize, PartialEq, Debug)]
 pub struct PersistedValue {
     info: BatchInfo,
-    maybe_payload: Option<Vec<SignedTransaction>>,
+    maybe_payload: Arc<Option<Vec<SignedTransaction>>>,
 }
 
 #[derive(PartialEq, Debug)]
@@ -30,24 +29,28 @@ impl PersistedValue {
     pub(crate) fn new(info: BatchInfo, maybe_payload: Option<Vec<SignedTransaction>>) -> Self {
         Self {
             info,
-            maybe_payload,
+            maybe_payload: Arc::new(maybe_payload),
         }
     }
 
     pub(crate) fn payload_storage_mode(&self) -> StorageMode {
-        match self.maybe_payload {
+        match self.maybe_payload.as_ref() {
             Some(_) => StorageMode::MemoryAndPersisted,
             None => StorageMode::PersistedOnly,
         }
     }
 
     pub(crate) fn take_payload(&mut self) -> Option<Vec<SignedTransaction>> {
-        self.maybe_payload.take()
+        let old_arc = mem::replace(&mut self.maybe_payload, Arc::new(None));
+        match Arc::try_unwrap(old_arc) {
+            Ok(Some(payload)) => Some(payload),
+            _ => None,
+        }
     }
 
     #[allow(dead_code)]
     pub(crate) fn remove_payload(&mut self) {
-        self.maybe_payload = None;
+        mem::replace(&mut self.maybe_payload, Arc::new(None));
     }
 
     pub fn batch_info(&self) -> &BatchInfo {
@@ -55,11 +58,15 @@ impl PersistedValue {
     }
 
     pub fn payload(&self) -> &Option<Vec<SignedTransaction>> {
-        &self.maybe_payload
+        self.maybe_payload.as_ref()
+    }
+
+    pub fn payload_arc(&self) -> Arc<Option<Vec<SignedTransaction>>> {
+        self.maybe_payload.clone()
     }
 
     pub fn summary(&self) -> Vec<TxnSummaryWithExpiration> {
-        if let Some(payload) = &self.maybe_payload {
+        if let Some(payload) = self.maybe_payload.as_ref() {
             return payload
                 .iter()
                 .map(|txn| {
@@ -76,7 +83,7 @@ impl PersistedValue {
     }
 
     pub fn unpack(self) -> (BatchInfo, Option<Vec<SignedTransaction>>) {
-        (self.info, self.maybe_payload)
+        (self.info, Arc::try_unwrap(self.maybe_payload).ok().unwrap())
     }
 }
 
@@ -97,9 +104,10 @@ impl TryFrom<PersistedValue> for Batch {
             batch_info: value.info,
             payload: BatchPayload::new(
                 author,
-                value
-                    .maybe_payload
-                    .ok_or_else(|| anyhow::anyhow!("Payload not exist"))?,
+                match Arc::try_unwrap(value.maybe_payload) {
+                    Ok(Some(payload)) => payload,
+                    _ => anyhow::bail!("Payload not available"),
+                },
             ),
         })
     }

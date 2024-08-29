@@ -17,12 +17,7 @@ use aptos_config::config::{
     ChainHealthBackoffValues, ExecutionBackpressureConfig, PipelineBackpressureValues,
 };
 use aptos_consensus_types::{
-    block::Block,
-    block_data::BlockData,
-    common::{Author, Payload, PayloadFilter, Round},
-    pipelined_block::ExecutionSummary,
-    quorum_cert::QuorumCert,
-    utils::PayloadTxnsSize,
+    block::Block, block_data::BlockData, common::{Author, Payload, PayloadFilter, Round}, pipelined_block::ExecutionSummary, quorum_cert::QuorumCert, request_response::PayloadTxns, utils::PayloadTxnsSize
 };
 use aptos_crypto::{bls12381::Signature, hash::CryptoHash, HashValue};
 use aptos_experimental_runtimes::thread_manager::optimal_min_len;
@@ -370,7 +365,7 @@ impl ProposalGenerator {
         let skip_non_rand_blocks = self.onchain_randomness_config.skip_non_rand_blocks();
         let start_time = self.time_service.get_current_timestamp();
 
-        let (validator_txns, payload, all_txns, timestamp) = if hqc.certified_block().has_reconfiguration() {
+        let (validator_txns, payload, payload_txns, timestamp) = if hqc.certified_block().has_reconfiguration() {
             // Reconfiguration rule - we propose empty blocks with parents' timestamp
             // after reconfiguration until it's committed
             (
@@ -379,7 +374,7 @@ impl ProposalGenerator {
                     self.quorum_store_enabled,
                     self.allow_batches_without_pos_in_proposal,
                 ),
-                vec![],
+                PayloadTxns::empty(),
                 hqc.certified_block().timestamp_usecs(),
             )
         } else {
@@ -461,7 +456,7 @@ impl ProposalGenerator {
             let validator_txn_filter =
                 vtxn_pool::TransactionFilter::PendingTxnHashSet(pending_validator_txn_hashes);
 
-            let (validator_txns, mut payload, mut all_txns) = self
+            let (validator_txns, mut payload, payload_txns) = self
                 .payload_client
                 .pull_payload(
                     PayloadPullParameters {
@@ -477,7 +472,7 @@ impl ProposalGenerator {
                         pending_uncommitted_blocks: pending_blocks.len(),
                         recent_max_fill_fraction: max_fill_fraction,
                         block_timestamp: timestamp,
-                        return_all_txns: skip_non_rand_blocks,
+                        return_payload_txns: skip_non_rand_blocks,
                     },
                     validator_txn_filter,
                     wait_callback,
@@ -490,12 +485,15 @@ impl ProposalGenerator {
                 && max_txns_from_block_to_execute.map_or(false, |v| payload.len() as u64 > v)
             {
                 payload = payload.transform_to_quorum_store_v2(max_txns_from_block_to_execute);
-                let len = max_txns_from_block_to_execute.unwrap_or(all_txns.len() as u64) as usize;
-                all_txns = all_txns[..len].to_vec();
             }
 
-            (validator_txns, payload, all_txns, timestamp.as_micros() as u64)
+            (validator_txns, payload, payload_txns, timestamp.as_micros() as u64)
         };
+
+        let PayloadTxns {
+            ref_txns,
+            inline_txns,
+        } = payload_txns;
 
         observe_block(timestamp, BlockStage::PULLED_PAYLOAD);
         info!("[ProposalGeneration] Pull txns took: {:?}, round {}", self.time_service.get_current_timestamp() - start_time, round);
@@ -509,20 +507,15 @@ impl ProposalGenerator {
             proposer_election,
         );
 
+        // daniel todo: deal with max_txns_from_block_to_execute in check_randomness
         // Check if the block contains any randomness transaction
         let maybe_require_randomness = skip_non_rand_blocks.then(|| {
-            all_txns.par_iter().any(|txns| {
-                self.validator.read().check_randomness_in_batch(txns)
+            ref_txns.par_iter().any(|txns| {
+                self.validator.read().check_randomness_in_batch(txns.as_ref())
             })
+            |
+            inline_txns.par_iter().any(|txn| self.validator.read().check_randomness(txn))
         });
-
-        // let maybe_require_randomness = skip_non_rand_blocks.then(|| {
-        //     all_txns
-        //         .par_iter()
-        //         .flatten()
-        //         .any(|txns| txns.par_iter().any(|txn| self.validator.read().check_randomness(txn)))
-        // });
-
 
         observe_block(timestamp, BlockStage::CHECKED_RAND);
         info!("[ProposalGeneration] Check randomness took: {:?}, round {}, maybe_require_randomness {:?}", self.time_service.get_current_timestamp() - start_time, round, maybe_require_randomness);
