@@ -95,5 +95,5 @@ pub trait PayloadClient: Send + Sync {
         config: PayloadPullParameters,
         validator_txn_filter: TransactionFilter,
         wait_callback: BoxFuture<'static, ()>,
-    ) -> anyhow::Result<(Vec<ValidatorTransaction>, Payload, Vec<SignedTransaction>), QuorumStoreError>;
+    ) -> anyhow::Result<(Vec<ValidatorTransaction>, Payload, Vec<Option<Vec<SignedTransaction>>>), QuorumStoreError>;
 }

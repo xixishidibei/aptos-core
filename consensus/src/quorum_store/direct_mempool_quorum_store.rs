@@ -121,7 +121,7 @@ impl DirectMempoolQuorumStore {
 
         let get_block_response_start_time = Instant::now();
         let payload = Payload::DirectMempool(txns.clone());
-        let result = match callback.send(Ok(GetPayloadResponse::GetPayloadResponse((payload, txns)))) {
+        let result = match callback.send(Ok(GetPayloadResponse::GetPayloadResponse((payload, vec![Some(txns)])))) {
             Err(_) => {
                 error!("Callback failed");
                 counters::CALLBACK_FAIL_LABEL

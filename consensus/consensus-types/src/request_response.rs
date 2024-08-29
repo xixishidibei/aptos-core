@@ -53,5 +53,5 @@ impl fmt::Display for GetPayloadCommand {
 
 #[derive(Debug)]
 pub enum GetPayloadResponse {
-    GetPayloadResponse((Payload, Vec<SignedTransaction>)),
+    GetPayloadResponse((Payload, Vec<Option<Vec<SignedTransaction>>>)),
 }

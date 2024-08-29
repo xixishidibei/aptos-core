@@ -367,7 +367,7 @@ impl BatchProofQueue {
         return_non_full: bool,
         block_timestamp: Duration,
         proofs_with_data: bool,
-    ) -> (Vec<ProofOfStore>, PayloadTxnsSize, u64, bool, Vec<SignedTransaction>) {
+    ) -> (Vec<ProofOfStore>, PayloadTxnsSize, u64, bool, Vec<Option<Vec<SignedTransaction>>>) {
         let (result, all_txns, unique_txns, is_full, ret_txns) = self.pull_internal(
             false,
             excluded_batches,
@@ -419,7 +419,7 @@ impl BatchProofQueue {
         return_non_full: bool,
         block_timestamp: Duration,
         batches_with_data: bool,
-    ) -> (Vec<BatchInfo>, PayloadTxnsSize, u64, Vec<SignedTransaction>) {
+    ) -> (Vec<BatchInfo>, PayloadTxnsSize, u64, Vec<Option<Vec<SignedTransaction>>>) {
         let (result, all_txns, unique_txns, _, ret_txns) = self.pull_internal(
             true,
             excluded_batches,
@@ -482,13 +482,13 @@ impl BatchProofQueue {
         return_non_full: bool,
         block_timestamp: Duration,
         batches_with_data: bool,
-    ) -> (Vec<&QueueItem>, PayloadTxnsSize, u64, bool, Vec<SignedTransaction>) {
+    ) -> (Vec<&QueueItem>, PayloadTxnsSize, u64, bool, Vec<Option<Vec<SignedTransaction>>>) {
         let mut result = Vec::new();
         let mut cur_unique_txns = 0;
         let mut cur_all_txns = PayloadTxnsSize::zero();
         let mut excluded_txns = 0;
         let mut full = false;
-        let mut ret_txns: Vec<SignedTransaction> = Vec::new();
+        let mut ret_txns = Vec::new();
         // Set of all the excluded transactions and all the transactions included in the result
         let mut filtered_txns = HashSet::new();
         for batch_info in excluded_batches {
@@ -555,9 +555,7 @@ impl BatchProofQueue {
                         if batches_with_data {
                             match self.batch_store.get_batch_from_local(batch.digest()) {
                                 Ok(persisted_value) => {
-                                    if let Some(txns) = persisted_value.payload() {
-                                        ret_txns.extend(txns.clone());
-                                    }
+                                    ret_txns.push(persisted_value.payload().clone());
                                 }
                                 Err(_) => {
                                     // If the batch is not found in local storage, skip it.

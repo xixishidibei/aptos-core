@@ -58,7 +58,7 @@ impl QuorumStoreClient {
         exclude_payloads: PayloadFilter,
         block_timestamp: Duration,
         return_all_txns: bool,
-    ) -> anyhow::Result<(Payload, Vec<SignedTransaction>), QuorumStoreError> {
+    ) -> anyhow::Result<(Payload, Vec<Option<Vec<SignedTransaction>>>), QuorumStoreError> {
         let (callback, callback_rcv) = oneshot::channel();
         let req = GetPayloadCommand::GetPayloadRequest(GetPayloadRequest {
             max_txns,
@@ -98,7 +98,7 @@ impl UserPayloadClient for QuorumStoreClient {
         &self,
         params: PayloadPullParameters,
         wait_callback: BoxFuture<'static, ()>,
-    ) -> anyhow::Result<(Payload, Vec<SignedTransaction>), QuorumStoreError> {
+    ) -> anyhow::Result<(Payload, Vec<Option<Vec<SignedTransaction>>>), QuorumStoreError> {
         let return_non_full = params.recent_max_fill_fraction
             < self.wait_for_full_blocks_above_recent_fill_threshold
             && params.pending_uncommitted_blocks < self.wait_for_full_blocks_above_pending_blocks;

@@ -60,7 +60,7 @@ impl PayloadClient for MixedPayloadClient {
         params: PayloadPullParameters,
         validator_txn_filter: TransactionFilter,
         wait_callback: BoxFuture<'static, ()>,
-    ) -> anyhow::Result<(Vec<ValidatorTransaction>, Payload, Vec<SignedTransaction>), QuorumStoreError> {
+    ) -> anyhow::Result<(Vec<ValidatorTransaction>, Payload, Vec<Option<Vec<SignedTransaction>>>), QuorumStoreError> {
         // Pull validator txns first.
         let validator_txn_pull_timer = Instant::now();
         let mut validator_txns = self

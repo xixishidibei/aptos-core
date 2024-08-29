@@ -209,11 +209,11 @@ impl ProofManager {
                     )
                 };
 
-                let all_transactions = qs_transactions
+                let mut all_transactions = qs_transactions
                     .into_iter()
                     .chain(opt_batch_txns.into_iter())
-                    .chain(inline_transactions.into_iter())
-                    .collect::<Vec<SignedTransaction>>();
+                    .collect::<Vec<Option<Vec<SignedTransaction>>>>();
+                all_transactions.push(Some(inline_transactions));
 
                 let res = GetPayloadResponse::GetPayloadResponse((response, all_transactions));
                 match request.callback.send(Ok(res)) {

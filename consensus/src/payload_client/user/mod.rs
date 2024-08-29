@@ -19,7 +19,7 @@ pub trait UserPayloadClient: Send + Sync {
         &self,
         params: PayloadPullParameters,
         wait_callback: BoxFuture<'static, ()>,
-    ) -> anyhow::Result<(Payload, Vec<SignedTransaction>), QuorumStoreError>;
+    ) -> anyhow::Result<(Payload, Vec<Option<Vec<SignedTransaction>>>), QuorumStoreError>;
 }
 
 /// A dummy user payload client that pull hardcoded txns one by one.
