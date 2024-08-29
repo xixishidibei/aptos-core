@@ -510,11 +510,19 @@ impl ProposalGenerator {
         );
 
         // Check if the block contains any randomness transaction
+        // let maybe_require_randomness = skip_non_rand_blocks.then(|| {
+        //     all_txns.par_iter().any(|txns| {
+        //         self.validator.read().check_randomness_in_batch(txns)
+        //     })
+        // });
+
         let maybe_require_randomness = skip_non_rand_blocks.then(|| {
-            all_txns.par_iter().any(|txns| {
-                self.validator.read().check_randomness_in_batch(txns)
-            })
+            all_txns
+                .par_iter()
+                .flatten()
+                .any(|txns| txns.par_iter().any(|txn| self.validator.read().check_randomness(txn)))
         });
+
 
         observe_block(timestamp, BlockStage::CHECKED_RAND);
         info!("[ProposalGeneration] Check randomness took: {:?}, round {}, maybe_require_randomness {:?}", self.time_service.get_current_timestamp() - start_time, round, maybe_require_randomness);

@@ -151,16 +151,6 @@ impl PooledVMValidator {
         self.get_next_vm().lock().unwrap().check_randomness(txn)
     }
 
-    // pub fn check_randomness_in_batch(&self, txns: &Option<Vec<SignedTransaction>>) -> bool {
-    //     if let Some(txns) = txns {
-    //         for txn in txns {
-    //             if self.check_randomness(txn) {
-    //                 return true;
-    //             }
-    //         }
-    //     }
-    //     false
-    // }
     pub fn check_randomness_in_batch(&self, txns: &Option<Vec<SignedTransaction>>) -> bool {
         txns.as_ref()
             .map_or(false, |txns| txns.iter().any(|txn| self.check_randomness(txn)))
