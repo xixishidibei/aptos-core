@@ -41,11 +41,7 @@ impl PersistedValue {
     }
 
     pub(crate) fn take_payload(&mut self) -> Option<Vec<SignedTransaction>> {
-        let old_arc = mem::replace(&mut self.maybe_payload, Arc::new(None));
-        match Arc::try_unwrap(old_arc) {
-            Ok(Some(payload)) => Some(payload),
-            _ => None,
-        }
+        self.maybe_payload.as_ref().clone()
     }
 
     #[allow(dead_code)]
