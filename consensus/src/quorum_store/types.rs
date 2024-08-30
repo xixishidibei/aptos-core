@@ -40,7 +40,7 @@ impl PersistedValue {
         }
     }
 
-    pub(crate) fn take_payload(&mut self) -> Option<Vec<SignedTransaction>> {
+    pub(crate) fn take_payload(&self) -> Option<Vec<SignedTransaction>> {
         self.maybe_payload.as_ref().clone()
     }
 
@@ -79,7 +79,7 @@ impl PersistedValue {
     }
 
     pub fn unpack(self) -> (BatchInfo, Option<Vec<SignedTransaction>>) {
-        (self.info, Arc::try_unwrap(self.maybe_payload).ok().unwrap())
+        (self.info, self.maybe_payload.as_ref().clone())
     }
 }
 
@@ -100,10 +100,11 @@ impl TryFrom<PersistedValue> for Batch {
             batch_info: value.info,
             payload: BatchPayload::new(
                 author,
-                match Arc::try_unwrap(value.maybe_payload) {
-                    Ok(Some(payload)) => payload,
-                    _ => anyhow::bail!("Payload not available"),
-                },
+                value
+                    .maybe_payload
+                    .as_ref()
+                    .clone()
+                    .ok_or_else(|| anyhow::anyhow!("Payload not exist"))?,
             ),
         })
     }
