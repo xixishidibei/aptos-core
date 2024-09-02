@@ -232,6 +232,20 @@ impl StacklessControlFlowGraph {
         }
     }
 
+    pub fn enclosing_block(&self, code_offset: CodeOffset) -> BlockId {
+        for (blk_id, block) in &self.blocks {
+            match &block.content {
+                BlockContent::Basic { lower, upper }
+                    if (*lower..=*upper).contains(&code_offset) =>
+                {
+                    return *blk_id
+                },
+                _ => {},
+            }
+        }
+        panic!("code offset not in the control flow graph")
+    }
+
     pub fn instr_indexes(
         &self,
         block_id: BlockId,

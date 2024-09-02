@@ -13,7 +13,7 @@ use move_compiler_v2::{
 };
 use move_model::{metadata::LanguageVersion, model::GlobalEnv};
 use move_prover_test_utils::{baseline_test, extract_test_directives};
-use move_stackless_bytecode::function_target_pipeline::FunctionTargetPipeline;
+use move_stackless_bytecode::{ast_generator, function_target_pipeline::FunctionTargetPipeline};
 use once_cell::unsync::Lazy;
 use std::{
     cell::{RefCell, RefMut},
@@ -690,6 +690,7 @@ fn run_test(path: &Path, config: TestConfig) -> datatest_stable::Result<()> {
     logging::setup_logging_for_testing();
     let path_str = path.display().to_string();
     let mut options = config.options.clone();
+    let run_ast_generator = path_str.contains("/ast-generator/");
     options.warn_unused = path_str.contains("/unused/");
     options.warn_deprecated = path_str.contains("/deprecated/");
     options.compile_verify_code = path_str.contains("/verification/verify/");
@@ -812,6 +813,21 @@ fn run_test(path: &Path, config: TestConfig) -> datatest_stable::Result<()> {
                     }
                 },
             );
+            if run_ast_generator {
+                let out = &mut test_output.borrow_mut();
+                for (fun_id, variant) in targets.get_funs_and_variants() {
+                    let fun_env = env.get_function(fun_id);
+                    let target = targets.get_target(&fun_env, &variant);
+                    if let Some(exp) = ast_generator::generate_ast(&target) {
+                        out.push_str(&format!(
+                            "generated AST for {}:\n{}\n",
+                            target.func_env.get_name_str(),
+                            exp.display(&env)
+                        ));
+                    }
+                }
+            }
+
             if *ok.borrow() && config.stop_after == StopAfter::FileFormat {
                 let units = run_file_format_gen(&mut env, &targets);
                 let out = &mut test_output.borrow_mut();

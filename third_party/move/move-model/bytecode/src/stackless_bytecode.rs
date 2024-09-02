@@ -9,12 +9,13 @@ use move_binary_format::file_format::CodeOffset;
 use move_core_types::{u256, value::MoveValue};
 use move_model::{
     ast,
-    ast::{Address, Exp, ExpData, MemoryLabel, Spec, TempIndex, TraceKind},
+    ast::{Address, Exp, ExpData, MemoryLabel, Spec, TempIndex, TraceKind, Value},
     exp_rewriter::{ExpRewriter, ExpRewriterFunctions, RewriteTarget},
     model::{FunId, GlobalEnv, ModuleId, NodeId, QualifiedInstId, SpecVarId, StructId},
     symbol::Symbol,
     ty::{Type, TypeDisplayContext},
 };
+use num::{bigint::Sign, BigInt};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt,
@@ -137,6 +138,33 @@ impl Constant {
                     .collect(),
             ),
             Constant::Vector(v) => MoveValue::Vector(v.iter().map(|x| x.to_move_value()).collect()),
+        }
+    }
+
+    pub fn to_model_value(&self) -> Value {
+        match self {
+            Constant::Bool(x) => Value::Bool(*x),
+            Constant::U8(x) => Value::Number((*x).into()),
+            Constant::U16(x) => Value::Number((*x).into()),
+            Constant::U32(x) => Value::Number((*x).into()),
+            Constant::U64(x) => Value::Number((*x).into()),
+            Constant::U128(x) => Value::Number((*x).into()),
+            Constant::U256(x) => {
+                Value::Number(BigInt::from_bytes_le(Sign::NoSign, &x.to_le_bytes()))
+            },
+            Constant::Address(a) => Value::Address(a.clone()),
+            /*
+            Constant::ByteArray(v) => {
+                MoveValue::Vector(v.iter().map(|x| MoveValue::U8(*x)).collect())
+            },
+            Constant::AddressArray(v) => MoveValue::Vector(
+                v.iter()
+                    .map(|x| MoveValue::Address(x.expect_numerical()))
+                    .collect(),
+            ),
+            Constant::Vector(v) => MoveValue::Vector(v.iter().map(|x| x.to_move_value()).collect()),
+             */
+            _ => unimplemented!("const to value"),
         }
     }
 }

@@ -1,0 +1,99 @@
+// -- Model dump before bytecode pipeline
+module 0x815::m {
+    private fun some_f(x: u64): u64 {
+        x
+    }
+    private fun t1(c: bool): bool {
+        c
+    }
+    private fun t2(c: bool): bool {
+        if c {
+          false
+        } else {
+          true
+        }
+    }
+    private fun t3(c: u64) {
+        loop {
+          if Gt<u64>(c, 0) {
+            c: u64 = m::some_f(c)
+          } else {
+            break
+          }
+        }
+    }
+} // end 0x815::m
+
+============ initial bytecode ================
+
+[variant baseline]
+fun m::some_f($t0: u64): u64 {
+     var $t1: u64
+  0: $t1 := infer($t0)
+  1: return $t1
+}
+
+
+[variant baseline]
+fun m::t1($t0: bool): bool {
+     var $t1: bool
+  0: $t1 := infer($t0)
+  1: return $t1
+}
+
+
+[variant baseline]
+fun m::t2($t0: bool): bool {
+     var $t1: bool
+  0: if ($t0) goto 1 else goto 4
+  1: label L0
+  2: $t1 := false
+  3: goto 6
+  4: label L1
+  5: $t1 := true
+  6: label L2
+  7: return $t1
+}
+
+
+[variant baseline]
+fun m::t3($t0: u64) {
+     var $t1: bool
+     var $t2: u64
+     var $t3: u64
+  0: label L0
+  1: $t2 := 0
+  2: $t1 := >($t0, $t2)
+  3: if ($t1) goto 4 else goto 8
+  4: label L2
+  5: $t3 := m::some_f($t0)
+  6: $t0 := infer($t3)
+  7: goto 10
+  8: label L3
+  9: goto 12
+ 10: label L4
+ 11: goto 0
+ 12: label L1
+ 13: return ()
+}
+
+generated AST for some_f:
+return x
+generated AST for t1:
+return c
+generated AST for t2:
+if c {
+
+} else {
+  NoOp()
+}
+generated AST for t3:
+$t2: u64 = m::some_f(c);
+$t2: u64 = 0;
+if $t1 {
+
+} else {
+  NoOp()
+}
+
+============ bytecode verification succeeded ========
