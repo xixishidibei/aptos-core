@@ -103,12 +103,12 @@ template identity(
 
     signal ascii_jwt_payload_hash <== HashBytesToFieldWithLen(max_ascii_jwt_payload_len)(ascii_jwt_payload, ascii_payload_len);
 
-    // TODO: Add comment describing what stirng bodies does
+    // TODO: Add comment describing what string bodies does
     signal string_bodies[max_ascii_jwt_payload_len] <== StringBodies(max_ascii_jwt_payload_len)(ascii_jwt_payload);
 
     // To prevent attacks involved fields inside nested brackets, we perform the following steps:
     // 1. Take the inverse of string bodies array
-    // 2. Create and array marking open brackets (1) and closed brackets (-1) in the ASCII JWT payload, with 0 elsewhere
+    // 2. Create an array marking open brackets (1) and closed brackets (-1) in the ASCII JWT payload, with 0 elsewhere
     // 3. Use the array from 1 to eliminate quoted brackets in 2 with element-wise multiplication
     // 4. Use the array from 3 to make an array with 1+ inside brackets and 0 everywhere else, not including the outermost brackets of the JWT payload
     // 5. Use the array from 4 to check there are no characters of a given field (such as aud) inside of nested brackets. This is done per field
