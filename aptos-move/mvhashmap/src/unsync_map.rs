@@ -9,7 +9,7 @@ use crate::{
 use aptos_aggregator::types::{code_invariant_error, DelayedFieldValue};
 use aptos_crypto::hash::HashValue;
 use aptos_types::{
-    delayed_fields::PanicError,
+    error::PanicError,
     executable::{Executable, ExecutableDescriptor, ModulePath},
     write_set::TransactionWrite,
 };

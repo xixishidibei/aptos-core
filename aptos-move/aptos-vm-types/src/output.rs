@@ -12,7 +12,7 @@ use aptos_aggregator::{
 };
 use aptos_types::{
     contract_event::ContractEvent,
-    delayed_fields::PanicError,
+    error::PanicError,
     fee_statement::FeeStatement,
     state_store::state_key::StateKey,
     transaction::{TransactionAuxiliaryData, TransactionOutput, TransactionStatus},

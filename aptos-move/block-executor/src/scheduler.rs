@@ -6,7 +6,7 @@ use crate::explicit_sync_wrapper::ExplicitSyncWrapper;
 use aptos_aggregator::types::code_invariant_error;
 use aptos_infallible::Mutex;
 use aptos_mvhashmap::types::{Incarnation, TxnIndex};
-use aptos_types::delayed_fields::PanicError;
+use aptos_types::error::PanicError;
 use concurrent_queue::{ConcurrentQueue, PopError};
 use crossbeam::utils::CachePadded;
 use parking_lot::{RwLock, RwLockUpgradableReadGuard};

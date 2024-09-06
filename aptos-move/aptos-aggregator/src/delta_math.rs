@@ -5,9 +5,10 @@ use crate::{
     bounded_math::{ok_overflow, ok_underflow, BoundedMath, SignedU128},
     types::{
         expect_ok, DelayedFieldsSpeculativeError, DeltaApplicationFailureReason,
-        DeltaHistoryMergeOffsetFailureReason, PanicOr,
+        DeltaHistoryMergeOffsetFailureReason,
     },
 };
+use aptos_types::error::PanicOr;
 
 /// Tracks values seen by aggregator. In particular, stores information about
 /// the biggest and the smallest deltas that were applied successfully during

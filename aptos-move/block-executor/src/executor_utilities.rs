@@ -6,7 +6,7 @@ use aptos_aggregator::types::code_invariant_error;
 use aptos_logger::error;
 use aptos_mvhashmap::types::ValueWithLayout;
 use aptos_types::{
-    contract_event::TransactionEvent, delayed_fields::PanicError, executable::Executable,
+    contract_event::TransactionEvent, error::PanicError, executable::Executable,
     state_store::TStateView, transaction::BlockExecutableTransaction as Transaction,
     write_set::TransactionWrite,
 };

@@ -20,7 +20,7 @@ use aptos_aggregator::{
     delta_math::DeltaHistory,
     resolver::{TAggregatorV1View, TDelayedFieldView},
     types::{
-        code_invariant_error, expect_ok, DelayedFieldValue, DelayedFieldsSpeculativeError, PanicOr,
+        code_invariant_error, expect_ok, DelayedFieldValue, DelayedFieldsSpeculativeError,
         ReadPosition,
     },
 };
@@ -36,7 +36,7 @@ use aptos_mvhashmap::{
     MVHashMap,
 };
 use aptos_types::{
-    delayed_fields::PanicError,
+    error::{PanicError, PanicOr},
     executable::{Executable, ModulePath},
     state_store::{
         errors::StateviewError,
@@ -261,11 +261,14 @@ fn compute_delayed_field_try_add_delta_outcome_from_history(
         true
     };
 
-    Ok((result, DelayedFieldRead::HistoryBounded {
-        restriction: history,
-        max_value,
-        inner_aggregator_value: base_aggregator_value,
-    }))
+    Ok((
+        result,
+        DelayedFieldRead::HistoryBounded {
+            restriction: history,
+            max_value,
+            inner_aggregator_value: base_aggregator_value,
+        },
+    ))
 }
 
 fn compute_delayed_field_try_add_delta_outcome_first_time(
@@ -293,11 +296,14 @@ fn compute_delayed_field_try_add_delta_outcome_first_time(
         true
     };
 
-    Ok((result, DelayedFieldRead::HistoryBounded {
-        restriction: history,
-        max_value,
-        inner_aggregator_value: base_aggregator_value,
-    }))
+    Ok((
+        result,
+        DelayedFieldRead::HistoryBounded {
+            restriction: history,
+            max_value,
+            inner_aggregator_value: base_aggregator_value,
+        },
+    ))
 }
 // TODO[agg_v2](cleanup): see about the split with CapturedReads,
 // and whether anything should be moved there.
@@ -1759,7 +1765,7 @@ mod test {
     use aptos_aggregator::{
         bounded_math::{BoundedMath, SignedU128},
         delta_math::DeltaHistory,
-        types::{DelayedFieldValue, DelayedFieldsSpeculativeError, PanicOr, ReadPosition},
+        types::{DelayedFieldValue, DelayedFieldsSpeculativeError, ReadPosition},
     };
     use aptos_mvhashmap::{
         types::{MVDelayedFieldsError, TxnIndex},
@@ -1768,6 +1774,7 @@ mod test {
         MVHashMap,
     };
     use aptos_types::{
+        error::PanicOr,
         executable::Executable,
         state_store::{
             errors::StateviewError, state_storage_usage::StateStorageUsage,

@@ -7,11 +7,11 @@ use crate::{
     delta_change_set::{serialize, DeltaOp},
     types::{
         code_invariant_error, DelayedFieldValue, DelayedFieldsSpeculativeError,
-        DeltaApplicationFailureReason, PanicOr,
+        DeltaApplicationFailureReason,
     },
 };
 use aptos_types::{
-    delayed_fields::PanicError,
+    error::{PanicError, PanicOr},
     state_store::{
         state_key::StateKey,
         state_value::{StateValue, StateValueMetadata},

@@ -17,7 +17,7 @@ use aptos_aggregator::{
 };
 use aptos_types::{
     contract_event::ContractEvent,
-    delayed_fields::PanicError,
+    error::PanicError,
     state_store::{
         state_key::{inner::StateKeyInner, StateKey},
         state_value::StateValueMetadata,

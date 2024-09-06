@@ -8,7 +8,7 @@ use aptos_aggregator::{
 };
 use aptos_mvhashmap::{types::TxnIndex, versioned_delayed_fields::TVersionedDelayedFieldView};
 use aptos_types::{
-    delayed_fields::PanicError,
+    error::PanicError,
     executable::Executable,
     state_store::{state_value::StateValueMetadata, TStateView},
     transaction::BlockExecutableTransaction as Transaction,
