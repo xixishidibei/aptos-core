@@ -137,6 +137,10 @@ impl ProofManager {
 
                 let (opt_batches, opt_batch_txns_size) = if self.enable_opt_quorum_store {
                     // TODO(ibalajiarun): Support unique txn calculation
+                    let exclude_authors = request
+                        .maybe_optqs_payload_pull_params
+                        .map(|p| p.exclude_authors)
+                        .unwrap_or_default();
                     let max_opt_batch_txns_size = request.max_txns - txns_with_proof_size;
                     let (opt_batches, opt_payload_size, _) = self.batch_proof_queue.pull_batches(
                         &excluded_batches
@@ -144,6 +148,7 @@ impl ProofManager {
                             .cloned()
                             .chain(proof_block.iter().map(|proof| proof.info().clone()))
                             .collect(),
+                        exclude_authors,
                         max_opt_batch_txns_size,
                         request.max_txns_after_filtering,
                         request.soft_max_txns_after_filtering,

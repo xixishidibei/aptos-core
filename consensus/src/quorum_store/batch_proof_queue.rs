@@ -7,7 +7,7 @@ use super::{
 };
 use crate::quorum_store::counters;
 use aptos_consensus_types::{
-    common::TxnSummaryWithExpiration,
+    common::{Author, TxnSummaryWithExpiration},
     payload::TDataInfo,
     proof_of_store::{BatchInfo, ProofOfStore},
     utils::PayloadTxnsSize,
@@ -386,6 +386,7 @@ impl BatchProofQueue {
         let (result, all_txns, unique_txns, is_full) = self.pull_internal(
             false,
             excluded_batches,
+            &HashSet::new(),
             max_txns,
             max_txns_after_filtering,
             soft_max_txns_after_filtering,
@@ -426,6 +427,7 @@ impl BatchProofQueue {
     pub fn pull_batches(
         &mut self,
         excluded_batches: &HashSet<BatchInfo>,
+        exclude_authors: &HashSet<Author>,
         max_txns: PayloadTxnsSize,
         max_txns_after_filtering: u64,
         soft_max_txns_after_filtering: u64,
@@ -435,6 +437,7 @@ impl BatchProofQueue {
         let (result, all_txns, unique_txns, _) = self.pull_internal(
             true,
             excluded_batches,
+            exclude_authors,
             max_txns,
             max_txns_after_filtering,
             soft_max_txns_after_filtering,
@@ -460,6 +463,7 @@ impl BatchProofQueue {
     ) {
         let (batches, all_txns, unique_txns) = self.pull_batches(
             excluded_batches,
+            &HashSet::new(),
             max_txns,
             max_txns_after_filtering,
             soft_max_txns_after_filtering,
@@ -486,6 +490,7 @@ impl BatchProofQueue {
         &mut self,
         batches_without_proofs: bool,
         excluded_batches: &HashSet<BatchInfo>,
+        exclude_authors: &HashSet<Author>,
         max_txns: PayloadTxnsSize,
         max_txns_after_filtering: u64,
         soft_max_txns_after_filtering: u64,
@@ -513,7 +518,11 @@ impl BatchProofQueue {
         }
 
         let mut iters = vec![];
-        for (_, batches) in self.author_to_batches.iter() {
+        for (_, batches) in self
+            .author_to_batches
+            .iter()
+            .filter(|(author, _)| !exclude_authors.contains(author))
+        {
             let batch_iter = batches.iter().rev().filter_map(|(sort_key, info)| {
                 if let Some(item) = self.items.get(&sort_key.batch_key) {
                     if item.is_committed() {
