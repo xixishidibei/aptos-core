@@ -1,0 +1,4 @@
+transactions:
+  - output_name: simple_user_script
+    script_path: ecosystem/indexer-grpc/indexer-transaction-generator/example_scripts/simple_user_script
+    fund_address: a531b7fdd7917f73ca216d89a8d9ce0cf7e7cfb9086ca6f6cbf9521532748d16

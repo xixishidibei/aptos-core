@@ -1,0 +1,33 @@
+# Config to import transactions onchain.
+import_config:
+  mainnet:
+    # Transaction Stream endpoint addresss.
+    transaction_stream_endpoint: https://grpc.mainnet.aptoslabs.com:443
+    # (Optional) The key to use with developers.aptoslabs.com
+    api_key: YOUR_KEY_HERE
+    # A map from versions to dump and their output names.
+    versions_to_import: {
+      # example:
+      # 123: "example_transaction"
+    }
+  # testnet:
+  #   transaction_stream_endpoint: https://grpc.testnet.aptoslabs.com:443
+  #   api_key: YOUR_KEY_HERE
+  #   versions_to_import: {
+  #   }
+  # devnet:
+  #   transaction_stream_endpoint: https://grpc.devnet.aptoslabs.com:443
+  #   api_key: YOUR_KEY_HERE
+  #   versions_to_import: {
+  #   }
+  # custom:
+  #   transaction_stream_endpoint: https://CUSTOM_ENDPOINT:443
+  #   versions_to_import: {
+  #   }
+# Config to generate the transactions via localnode.
+script_transaction_generator_config:
+  runs:
+    - transactions:
+      - output_name: simple_user_script
+        script_path: ecosystem/indexer-grpc/indexer-transaction-generator/example_move_files/
+        fund_address: a531b7fdd7917f73ca216d89a8d9ce0cf7e7cfb9086ca6f6cbf9521532748d16    
