@@ -28,6 +28,7 @@ module aptos_framework::object {
     use aptos_framework::create_signer::create_signer;
     use aptos_framework::event;
     use aptos_framework::guid;
+    use aptos_framework::permissioned_signer;
 
     friend aptos_framework::coin;
     friend aptos_framework::primary_fungible_store;
@@ -161,6 +162,11 @@ module aptos_framework::object {
     /// Used to create derived objects from a given objects.
     struct DeriveRef has drop, store {
         self: address,
+    }
+
+    /// Permission to transfer object with permissioned signer.
+    struct TransferPermission has copy, drop, store {
+        object: address,
     }
 
     /// Emitted whenever the object's owner field is changed.
@@ -537,6 +543,10 @@ module aptos_framework::object {
         to: address,
     ) acquires ObjectCore {
         let owner_address = signer::address_of(owner);
+        assert!(
+            permissioned_signer::check_permission(owner, 0, TransferPermission { object }),
+            error::permission_denied(EOBJECT_NOT_TRANSFERRABLE)
+        );
         verify_ungated_and_descendant(owner_address, object);
         transfer_raw_inner(object, to);
     }
@@ -615,6 +625,10 @@ module aptos_framework::object {
     /// Original owners can reclaim burnt objects any time in the future by calling unburn.
     public entry fun burn<T: key>(owner: &signer, object: Object<T>) acquires ObjectCore {
         let original_owner = signer::address_of(owner);
+        assert!(
+            permissioned_signer::check_permission(owner, 0, TransferPermission { object: object.inner }),
+            error::permission_denied(EOBJECT_NOT_TRANSFERRABLE)
+        );
         assert!(is_owner(object, original_owner), error::permission_denied(ENOT_OBJECT_OWNER));
         let object_addr = object.inner;
         move_to(&create_signer(object_addr), TombStone { original_owner });
@@ -628,6 +642,10 @@ module aptos_framework::object {
     ) acquires TombStone, ObjectCore {
         let object_addr = object.inner;
         assert!(exists<TombStone>(object_addr), error::invalid_argument(EOBJECT_NOT_BURNT));
+        assert!(
+            permissioned_signer::check_permission(original_owner, 0, TransferPermission { object: object_addr }),
+            error::permission_denied(EOBJECT_NOT_TRANSFERRABLE)
+        );
 
         let TombStone { original_owner: original_owner_addr } = move_from<TombStone>(object_addr);
         assert!(original_owner_addr == signer::address_of(original_owner), error::permission_denied(ENOT_OBJECT_OWNER));
@@ -695,6 +713,19 @@ module aptos_framework::object {
             obj_owner = owner(address_to_object<ObjectCore>(obj_owner));
         };
         obj_owner
+    }
+
+    public fun grant_permission<T>(
+        master: &signer,
+        permissioned_signer: &signer,
+        object: Object<T>,
+    ) {
+        permissioned_signer::authorize(
+            master,
+            permissioned_signer,
+            1,
+            TransferPermission { object: object.inner }
+        )
     }
 
     #[test_only]
@@ -1069,5 +1100,49 @@ module aptos_framework::object {
         let linear_transfer_ref = generate_linear_transfer_ref(&transfer_ref);
         set_untransferable(&weapon_constructor_ref);
         transfer_with_ref(linear_transfer_ref, @0x456);
+    }
+
+    #[test_only]
+    use aptos_framework::timestamp;
+
+    #[test(creator = @0x123)]
+    fun test_transfer_permission_e2e(
+        creator: &signer,
+    ) acquires ObjectCore {
+        let aptos_framework = account::create_signer_for_test(@0x1);
+        timestamp::set_time_has_started_for_testing(&aptos_framework);
+
+        let (_, hero) = create_hero(creator);
+        let (_, weapon) = create_weapon(creator);
+
+        // Create a permissioned signer
+        let creator_permission_handle = permissioned_signer::create_permissioned_handle(creator);
+        let creator_permission_signer = permissioned_signer::signer_from_permissioned(&creator_permission_handle);
+
+        // Grant aaron_permission_signer permission to transfer weapon object
+        grant_permission(creator, &creator_permission_signer, weapon);
+        transfer_to_object(&creator_permission_signer, weapon, hero);
+
+        permissioned_signer::destroy_permissioned_handle(creator_permission_handle);
+    }
+
+    #[test(creator = @0x123)]
+    #[expected_failure(abort_code = 327689, location = Self)]
+    fun test_transfer_no_permission(
+        creator: &signer,
+    ) acquires ObjectCore {
+        let aptos_framework = account::create_signer_for_test(@0x1);
+        timestamp::set_time_has_started_for_testing(&aptos_framework);
+
+        let (_, hero) = create_hero(creator);
+        let (_, weapon) = create_weapon(creator);
+
+        // Create a permissioned signer
+        let creator_permission_handle = permissioned_signer::create_permissioned_handle(creator);
+        let creator_permission_signer = permissioned_signer::signer_from_permissioned(&creator_permission_handle);
+
+        transfer_to_object(&creator_permission_signer, weapon, hero);
+
+        permissioned_signer::destroy_permissioned_handle(creator_permission_handle);
     }
 }
