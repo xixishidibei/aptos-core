@@ -418,6 +418,10 @@ impl PipelinedBlock {
         self.execution_summary.get().cloned()
     }
 
+    pub fn cancel_committed_transactions(&self) {
+        self.committed_transactions.set(vec![]).unwrap();
+    }
+
     pub fn wait_for_committed_transactions(&self) -> &[HashValue] {
         if self.block().is_genesis_block() || self.block.is_nil_block() {
             return &[];
