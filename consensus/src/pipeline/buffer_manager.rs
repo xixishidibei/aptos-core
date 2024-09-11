@@ -435,17 +435,25 @@ impl BufferManager {
         self.execution_root = None;
         self.signing_root = None;
         self.previous_commit_time = Instant::now();
+        info!("self.commit_proof_rb_handle.take()");
         self.commit_proof_rb_handle.take();
         // purge the incoming blocks queue
         while let Ok(Some(ordered_blocks)) = self.block_rx.try_next() {
             for block in &ordered_blocks.ordered_blocks {
+                info!(
+                    "block: ({}, {}) cancel_committed_transactions",
+                    block.epoch(),
+                    block.round()
+                );
                 block.cancel_committed_transactions();
             }
         }
+        info!("self.ongoing_tasks.load(Ordering::SeqCst)");
         // Wait for ongoing tasks to finish before sending back ack.
         while self.ongoing_tasks.load(Ordering::SeqCst) > 0 {
             tokio::time::sleep(Duration::from_millis(10)).await;
         }
+        info!("Reset done");
     }
 
     /// It pops everything in the buffer and if reconfig flag is set, it stops the main loop
