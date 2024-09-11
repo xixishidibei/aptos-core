@@ -228,12 +228,8 @@ impl ExecutionPipeline {
                     let transactions: Vec<_> = txns
                         .into_iter()
                         .filter(|txn| {
-                            if let Valid(txn) = txn {
-                                if let UserTransaction(user_txn) = txn {
-                                    !committed_transactions.contains(&user_txn.committed_hash())
-                                } else {
-                                    true
-                                }
+                            if let Valid(UserTransaction(user_txn)) = txn {
+                                !committed_transactions.contains(&user_txn.committed_hash())
                             } else {
                                 true
                             }
