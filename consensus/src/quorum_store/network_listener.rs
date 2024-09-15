@@ -57,16 +57,25 @@ impl NetworkListener {
                         counters::QUORUM_STORE_MSG_COUNT
                             .with_label_values(&["NetworkListener::signedbatchinfo"])
                             .inc();
-                        let cmd = ProofCoordinatorCommand::AppendSignature(*signed_batch_infos);
+                        let cmd =
+                            ProofCoordinatorCommand::AppendSignature((*signed_batch_infos, true));
+                        self.proof_coordinator_tx
+                            .send(cmd)
+                            .await
+                            .expect("Could not send signed_batch_info to proof_coordinator");
+                    },
+                    VerifiedEvent::UnverifiedSignedBatchInfo(signed_batch_infos) => {
+                        counters::QUORUM_STORE_MSG_COUNT
+                            .with_label_values(&["NetworkListener::signedbatchinfo"])
+                            .inc();
+                        let cmd =
+                            ProofCoordinatorCommand::AppendSignature((*signed_batch_infos, false));
                         self.proof_coordinator_tx
                             .send(cmd)
                             .await
                             .expect("Could not send signed_batch_info to proof_coordinator");
                     },
                     VerifiedEvent::BatchMsg(batch_msg) => {
-                        counters::QUORUM_STORE_MSG_COUNT
-                            .with_label_values(&["NetworkListener::batchmsg"])
-                            .inc();
                         let author = batch_msg.author();
                         let batches = batch_msg.take();
                         counters::RECEIVED_BATCH_MSG_COUNT.inc();
@@ -97,7 +106,7 @@ impl NetworkListener {
                     _ => {
                         unreachable!()
                     },
-                };
+                }
             });
         }
     }

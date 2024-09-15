@@ -206,6 +206,7 @@ pub enum VerifiedEvent {
     OrderVoteMsg(Box<OrderVoteMsg>),
     UnverifiedVoteMsg(Box<VoteMsg>),
     UnverifiedOrderVoteMsg(Box<OrderVoteMsg>),
+    UnverifiedSignedBatchInfo(Box<SignedBatchInfoMsg>),
     UnverifiedSyncInfo(Box<SyncInfo>),
     BatchMsg(Box<BatchMsg>),
     SignedBatchInfo(Box<SignedBatchInfoMsg>),

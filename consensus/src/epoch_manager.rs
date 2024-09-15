@@ -684,16 +684,14 @@ impl<P: OnChainConfigProvider> EpochManager<P> {
         let mut quorum_store_builder = if self.quorum_store_enabled {
             info!("Building QuorumStore");
             QuorumStoreBuilder::QuorumStore(InnerBuilder::new(
-                self.epoch(),
+                epoch_state.clone(),
                 self.author,
-                epoch_state.verifier.len() as u64,
                 quorum_store_config,
                 consensus_to_quorum_store_rx,
                 self.quorum_store_to_mempool_sender.clone(),
                 self.config.mempool_txn_pull_timeout_ms,
                 self.storage.aptos_db().clone(),
                 network_sender,
-                epoch_state.verifier.clone(),
                 self.proof_cache.clone(),
                 self.config.safety_rules.backend.clone(),
                 self.quorum_store_storage.clone(),
@@ -1496,6 +1494,20 @@ impl<P: OnChainConfigProvider> EpochManager<P> {
                             }
                         })
                         .await;
+                    return Ok(());
+                }
+            }
+
+            if self.config.optimistic_sig_verification_for_batch_info && !malicious_sender {
+                if let UnverifiedEvent::SignedBatchInfo(signed_batch_info_msg) =
+                    unverified_event.clone()
+                {
+                    Self::forward_event_to(
+                        quorum_store_msg_tx,
+                        peer_id,
+                        VerifiedEvent::UnverifiedSignedBatchInfo(signed_batch_info_msg),
+                    )
+                    .context("round manager sending unverified signed batch info msg ")?;
                     return Ok(());
                 }
             }

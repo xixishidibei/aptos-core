@@ -93,6 +93,7 @@ pub struct ConsensusConfig {
     pub optimistic_sig_verification_for_votes: bool,
     pub optimistic_sig_verification_for_order_votes: bool,
     pub optimistic_sig_verification_for_commit_votes: bool,
+    pub optimistic_sig_verification_for_batch_info: bool,
 }
 
 /// Deprecated
@@ -323,6 +324,7 @@ impl Default for ConsensusConfig {
             optimistic_sig_verification_for_votes: true,
             optimistic_sig_verification_for_order_votes: true,
             optimistic_sig_verification_for_commit_votes: true,
+            optimistic_sig_verification_for_batch_info: true,
         }
     }
 }
