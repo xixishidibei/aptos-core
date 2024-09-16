@@ -435,7 +435,7 @@ impl BlockStore {
             if new_block_event.epoch() == block.epoch() && new_block_event.round() == block.round()
             {
                 let iter = aptos_db
-                    .get_transaction_info_iterator(start_version, end_version - start_version)
+                    .get_transaction_info_iterator(start_version, end_version - start_version + 1)
                     .expect("iterator");
                 committed_transactions = iter
                     .map(|info| info.expect("info").transaction_hash())
