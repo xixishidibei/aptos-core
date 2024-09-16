@@ -234,6 +234,15 @@ impl SignedBatchInfo {
         })
     }
 
+    #[cfg(any(test, feature = "fuzzing"))]
+    pub fn dummy(batch_info: BatchInfo, signer: PeerId) -> Self {
+        Self {
+            info: batch_info,
+            signer,
+            signature: bls12381::Signature::dummy_signature(),
+        }
+    }
+
     pub fn signer(&self) -> PeerId {
         self.signer
     }

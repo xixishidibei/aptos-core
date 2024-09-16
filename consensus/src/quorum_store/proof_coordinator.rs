@@ -99,15 +99,14 @@ impl IncrementalProofState {
                     self.verified_signatures
                         .add_signature(signer, signed_batch_info.signature().clone());
                     self.unverified_signatures.remove_signature(signer);
-                } else if self.unverified_signatures.contains_voter(&signer) {
-                    warn!(
-                        "Duplicate unverified signatures received from {} on signed batch info",
-                        signer
-                    );
-                    self.unverified_signatures.remove_signature(signer);
-                    self.unverified_signatures
-                        .add_signature(signer, signed_batch_info.signature().clone());
-                } else {
+                } else if !self.verified_signatures.contains_voter(&signer) {
+                    if self.unverified_signatures.contains_voter(&signer) {
+                        warn!(
+                            "Duplicate unverified signatures received from {} on signed batch info",
+                            signer
+                        );
+                        self.unverified_signatures.remove_signature(signer);
+                    }
                     self.unverified_signatures
                         .add_signature(signer, signed_batch_info.signature().clone());
                 }
@@ -162,13 +161,21 @@ impl IncrementalProofState {
                 SignedBatchInfoError::UnableToAggregate
             })?;
 
-        let verified_aggregate_signature = match epoch_state
+        let (verified_aggregate_signature, malicious_authors) = match epoch_state
             .verifier
             .verify_multi_signatures(&self.info, &aggregated_sig)
         {
-            Ok(_) => aggregated_sig,
+            Ok(_) => {
+                for (account_address, signature) in self.unverified_signatures.signatures() {
+                    self.verified_signatures
+                        .add_signature(*account_address, signature.clone());
+                }
+                self.unverified_signatures = PartialSignatures::empty();
+                (aggregated_sig, vec![])
+            },
             Err(_) => {
                 // Question: Should we assign min tasks per thread here for into_par_iter()?
+                // Question: How to add a counter to sum up the time spent in all all the threads?
                 let verified = self
                     .unverified_signatures
                     .signatures()
@@ -189,13 +196,12 @@ impl IncrementalProofState {
                         .add_signature(account_address, signature.clone());
                     self.unverified_signatures.remove_signature(account_address);
                 }
-                epoch_state.verifier.add_malicious_authors(
-                    self.unverified_signatures
-                        .signatures()
-                        .keys()
-                        .cloned()
-                        .collect(),
-                );
+                let malicious_authors = self
+                    .unverified_signatures
+                    .signatures()
+                    .keys()
+                    .cloned()
+                    .collect();
                 self.unverified_signatures = PartialSignatures::empty();
                 let aggregated_sig = epoch_state
                     .verifier
@@ -207,19 +213,12 @@ impl IncrementalProofState {
                         );
                         SignedBatchInfoError::UnableToAggregate
                     })?;
-                epoch_state
-                    .verifier
-                    .verify_multi_signatures(&self.info, &aggregated_sig)
-                    .map_err(|e| {
-                        error!(
-                            "Unable to verify aggregated signature in proof coordinator err = {:?}",
-                            e
-                        );
-                        SignedBatchInfoError::InvalidAggregatedSignature
-                    })?;
-                aggregated_sig
+                (aggregated_sig, malicious_authors)
             },
         };
+        epoch_state
+            .verifier
+            .add_malicious_authors(malicious_authors);
         if self.ready(epoch_state) {
             self.completed = true;
             Ok(ProofOfStore::new(
