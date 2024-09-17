@@ -64,10 +64,9 @@ module aptos_std::from_bcs {
     /// Note that this function does not put any constraint on `T`. If code uses this function to
     /// deserialize a linear value, its their responsibility that the data they deserialize is
     /// owned.
-    public(friend) native fun from_bytes<T>(bytes: vector<u8>): T;
+    public native fun from_bytes<T>(bytes: vector<u8>): T;
     friend aptos_std::any;
     friend aptos_std::copyable_any;
-
 
     #[test_only]
     use std::bcs;
