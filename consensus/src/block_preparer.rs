@@ -146,31 +146,28 @@ impl BlockPreparer {
         tokio::task::spawn_blocking(move || {
             // stable sort to ensure batches with same gas are in the same order
             batched_txns.sort_by_key(|(_, gas)| Reverse(*gas));
-            info!("BlockPreparer: Batched transactions:");
-            for (txns, gas_bucket_start) in &batched_txns {
-                info!(
-                    "  BlockPreparer: Batched transactions: gas: {}, txns: {}",
-                    gas_bucket_start,
-                    txns.len()
-                );
-            }
 
-            let txns: Vec<_> = batched_txns
-                .into_iter()
-                .flat_map(|(txns, _)| txns.into_iter())
-                .collect();
+            let txns: Vec<_> = monitor!("flatten_transactions", {
+                batched_txns
+                    .into_iter()
+                    .flat_map(|(txns, _)| txns.into_iter())
+                    .collect()
+            });
             let txns_len = txns.len();
-            let filtered_txns = txns
-                .into_iter()
-                .filter(|txn| !committed_transactions.contains(&txn.committed_hash()))
-                .collect::<Vec<_>>();
+            let filtered_txns = monitor!("filter_committed_transactions", {
+                txns.into_iter()
+                    .filter(|txn| !committed_transactions.contains(&txn.committed_hash()))
+                    .collect::<Vec<_>>()
+            });
             info!(
                 "BlockPreparer: Filtered {}/{} committed transactions",
                 txns_len - filtered_txns.len(),
                 txns_len
             );
-            let filtered_txns = txn_filter.filter(block_id, block_timestamp_usecs, filtered_txns);
-            let deduped_txns = txn_deduper.dedup(filtered_txns);
+            let filtered_txns = monitor!("filter_transactions", {
+                txn_filter.filter(block_id, block_timestamp_usecs, filtered_txns)
+            });
+            let deduped_txns = monitor!("dedup_transactions", txn_deduper.dedup(filtered_txns));
             let mut shuffled_txns = {
                 let _timer = TXN_SHUFFLE_SECONDS.start_timer();
 
