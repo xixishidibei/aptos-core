@@ -76,7 +76,12 @@ pub use script::{
     TypeArgumentABI,
 };
 use serde::de::DeserializeOwned;
-use std::{collections::BTreeSet, hash::Hash, ops::Deref, sync::atomic::AtomicU64};
+use std::{
+    collections::BTreeSet,
+    hash::Hash,
+    ops::Deref,
+    sync::{atomic::AtomicU64, Arc},
+};
 
 pub type Version = u64; // Height - also used for MVCC in StateDB
 pub type AtomicVersion = AtomicU64;
@@ -482,7 +487,7 @@ pub struct SignedTransaction {
 
     /// A cached hash of the transaction.
     #[serde(skip)]
-    committed_hash: OnceCell<HashValue>,
+    committed_hash: Arc<OnceCell<HashValue>>,
 }
 
 /// PartialEq ignores the cached OnceCell fields that may or may not be initialized.
@@ -541,7 +546,7 @@ impl SignedTransaction {
             authenticator,
             raw_txn_size: OnceCell::new(),
             authenticator_size: OnceCell::new(),
-            committed_hash: OnceCell::new(),
+            committed_hash: Arc::new(OnceCell::new()),
         }
     }
 
@@ -556,7 +561,7 @@ impl SignedTransaction {
             authenticator,
             raw_txn_size: OnceCell::new(),
             authenticator_size: OnceCell::new(),
-            committed_hash: OnceCell::new(),
+            committed_hash: Arc::new(OnceCell::new()),
         }
     }
 
