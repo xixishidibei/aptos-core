@@ -1,64 +1,68 @@
 module aptos_framework::permissioned_delegation {
     use std::error;
-    use std::option;
-    use std::option::Option;
     use std::signer;
     use aptos_std::ed25519;
-    use aptos_std::from_bcs;
-    use aptos_std::smart_table;
-    use aptos_std::smart_table::SmartTable;
+    use aptos_std::ed25519::{new_signature_from_bytes, new_unvalidated_public_key_from_bytes};
+    use aptos_std::table::{Self, Table};
+    use aptos_framework::bcs_stream;
+    use aptos_framework::bcs_stream::deserialize_u8;
+    use aptos_framework::permissioned_signer::{is_permissioned_signer, signer_from_permissioned, PermissionedHandle,
+        destroy_permissioned_handle
+    };
     use aptos_framework::transaction_context;
+    #[test_only]
+    use std::bcs;
 
-    /// Only fungible asset metadata owner can make changes.
-    const EINVALID_PUBLIC_KEY: u64 = 1;
-    const EPUBLIC_KEY_NOT_FOUND: u64 = 2;
-    const EINVALID_SIGNATURE: u64 = 3;
+    const ENOT_MASTER_SIGNER: u64 = 1;
+    const EINVALID_PUBLIC_KEY: u64 = 2;
+    const EPUBLIC_KEY_NOT_FOUND: u64 = 3;
+    const EINVALID_SIGNATURE: u64 = 4;
+    const EHANDLE_EXISTENCE: u64 = 5;
 
-    struct PermissionedHandle {}
-
-    struct Signature {
-        public_key: ed25519::UnvalidatedPublicKey,
-        signature: ed25519::Signature,
+    struct Delegation has key {
+        handles: Table<ed25519::UnvalidatedPublicKey, PermissionedHandle>
     }
 
-    /// Store the BLS public key.
-    struct Delegation has key, drop {
-        handles: SmartTable<ed25519::UnvalidatedPublicKey, PermissionedHandle>
-    }
-
-    /// Update the public key.
-    public fun update_permissioned_handle(
+    public fun add_permissioned_handle(
         master: &signer,
         key: vector<u8>,
-        handle: Option<PermissionedHandle>
+        handle: PermissionedHandle
     ) acquires Delegation {
         assert!(!is_permissioned_signer(master), error::permission_denied(ENOT_MASTER_SIGNER));
         let addr = signer::address_of(master);
         let pubkey = ed25519::new_unvalidated_public_key_from_bytes(key);
         if (!exists<Delegation>(addr)) {
             move_to(master, Delegation {
-                handles: smart_table::new()
+                handles: table::new()
             });
         };
         let handles = &mut borrow_global_mut<Delegation>(addr).handles;
-        if (smart_table::contains(handles, pubkey)) {
-            if (option::is_some(&handle)) {
-                *smart_table::borrow_mut(handles, pubkey) = option::destroy_some(handle);
-            } else {
-                smart_table::remove(handles, pubkey);
-            }
-        } else if (option::is_some(&handle)) {
-            smart_table::add(handles, pubkey, option::destroy_some(handle));
-        };
+        assert!(!table::contains(handles, pubkey), error::already_exists(EHANDLE_EXISTENCE));
+        table::add(handles, pubkey, handle);
+    }
+
+    public fun remove_permissioned_handle(
+        master: &signer,
+        key: vector<u8>,
+    ) acquires Delegation {
+        assert!(!is_permissioned_signer(master), error::permission_denied(ENOT_MASTER_SIGNER));
+        let addr = signer::address_of(master);
+        let pubkey = ed25519::new_unvalidated_public_key_from_bytes(key);
+        let handles = &mut borrow_global_mut<Delegation>(addr).handles;
+        assert!(table::contains(handles, pubkey), error::not_found(EHANDLE_EXISTENCE));
+        destroy_permissioned_handle(table::remove(handles, pubkey));
     }
 
     /// Authorization function for account abstraction.
-    public fun authenticate(account: signer, signature: vector<u8>): signer {
+    public fun authenticate(account: signer, signature: vector<u8>): signer acquires Delegation {
         let addr = signer::address_of(&account);
-        let Signature {
-            public_key,
-            signature,
-        } = from_bcs::from_bytes<Signature>(signature);
+        let stream = bcs_stream::new(signature);
+        let public_key = new_unvalidated_public_key_from_bytes(
+            bcs_stream::deserialize_vector<u8>(&mut stream, |x| deserialize_u8(x))
+        );
+        let signature = new_signature_from_bytes(
+            bcs_stream::deserialize_vector<u8>(&mut stream, |x| deserialize_u8(x))
+        );
         assert!(
             ed25519::signature_verify_strict(
                 &signature,
@@ -69,11 +73,55 @@ module aptos_framework::permissioned_delegation {
         );
         if (exists<Delegation>(addr)) {
             let handles = &borrow_global<Delegation>(addr).handles;
-            if (smart_table::contains(handles, public_key)) {
-                signer_from_permissioned(smart_table::borrow(handles, public_key))
+            if (table::contains(handles, public_key)) {
+                signer_from_permissioned(table::borrow(handles, public_key))
             } else {
                 account
             }
+        } else {
+            account
         }
+    }
+
+    #[test_only]
+    use aptos_std::ed25519::{sign_arbitrary_bytes, generate_keys, signature_to_bytes, validated_public_key_to_bytes,
+        UnvalidatedPublicKey, Signature
+    };
+    #[test_only]
+    use aptos_framework::account::create_signer_for_test;
+    #[test_only]
+    use aptos_framework::permissioned_signer;
+    #[test_only]
+    use aptos_framework::timestamp;
+
+    #[test_only]
+    struct SignatureBundle has drop {
+        pubkey: UnvalidatedPublicKey,
+        signature: Signature,
+    }
+
+    #[test(account = @0x123, account_copy = @0x123)]
+    fun test_basics(account: signer, account_copy: signer) acquires Delegation {
+        let aptos_framework = create_signer_for_test(@aptos_framework);
+        timestamp::set_time_has_started_for_testing(&aptos_framework);
+        let (sk, vpk) = generate_keys();
+        let txn_hash = transaction_context::get_transaction_hash();
+        let signature = sign_arbitrary_bytes(&sk, txn_hash);
+        let pubkey_bytes = validated_public_key_to_bytes(&vpk);
+        let sig_bundle = SignatureBundle {
+            pubkey: new_unvalidated_public_key_from_bytes(pubkey_bytes),
+            signature,
+        };
+        let sudo_signer = authenticate(account, bcs::to_bytes(&sig_bundle));
+        assert!(!is_permissioned_signer(&sudo_signer), 1);
+
+        add_permissioned_handle(
+            &sudo_signer,
+            pubkey_bytes,
+            permissioned_signer::create_permissioned_handle(&sudo_signer)
+        );
+        let permissioned_signer = authenticate(sudo_signer, bcs::to_bytes(&sig_bundle));
+        assert!(is_permissioned_signer(&permissioned_signer), 2);
+        remove_permissioned_handle(&account_copy, pubkey_bytes);
     }
 }
