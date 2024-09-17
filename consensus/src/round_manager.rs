@@ -60,6 +60,7 @@ use aptos_safety_rules::TSafetyRules;
 use aptos_types::{
     block_info::BlockInfo,
     epoch_state::EpochState,
+    ledger_info::VerificationStatus,
     on_chain_config::{
         OnChainConsensusConfig, OnChainJWKConsensusConfig, OnChainRandomnessConfig,
         ValidatorTxnConfig,
@@ -1065,7 +1066,7 @@ impl RoundManager {
     async fn process_order_vote_msg(
         &mut self,
         order_vote_msg: OrderVoteMsg,
-        verified: bool,
+        verification_status: VerificationStatus,
     ) -> anyhow::Result<()> {
         if self.onchain_config.order_vote_enabled() {
             fail_point!("consensus::process_order_vote_msg", |_| {
@@ -1074,7 +1075,7 @@ impl RoundManager {
 
             self.new_qc_from_order_vote_msg(&order_vote_msg).await?;
 
-            self.process_order_vote(order_vote_msg.order_vote(), verified)
+            self.process_order_vote(order_vote_msg.order_vote(), verification_status)
                 .await?;
         }
         Ok(())
@@ -1083,7 +1084,7 @@ impl RoundManager {
     async fn process_order_vote(
         &mut self,
         order_vote: &OrderVote,
-        verified: bool,
+        verification_status: VerificationStatus,
     ) -> anyhow::Result<()> {
         debug!(
             self.new_log(LogEvent::ReceiveOrderVote)
@@ -1104,7 +1105,7 @@ impl RoundManager {
             let vote_reception_result = self.pending_order_votes.insert_order_vote(
                 order_vote,
                 self.epoch_state.clone(),
-                verified,
+                verification_status,
             );
             self.process_order_vote_reception_result(vote_reception_result)
                 .await?;
@@ -1161,7 +1162,7 @@ impl RoundManager {
     pub async fn process_vote_msg(
         &mut self,
         vote_msg: VoteMsg,
-        verified: bool,
+        verification_status: VerificationStatus,
     ) -> anyhow::Result<()> {
         fail_point!("consensus::process_vote_msg", |_| {
             Err(anyhow::anyhow!("Injected error in process_vote_msg"))
@@ -1176,7 +1177,7 @@ impl RoundManager {
             .await
             .context("[RoundManager] Stop processing vote")?
         {
-            self.process_vote(vote_msg.vote(), verified)
+            self.process_vote(vote_msg.vote(), verification_status)
                 .await
                 .context("[RoundManager] Add a new vote")?;
         }
@@ -1187,7 +1188,11 @@ impl RoundManager {
     /// If a new QC / TC is formed then
     /// 1) fetch missing dependencies if required, and then
     /// 2) call process_certificates(), which will start a new round in return.
-    async fn process_vote(&mut self, vote: &Vote, verified: bool) -> anyhow::Result<()> {
+    async fn process_vote(
+        &mut self,
+        vote: &Vote,
+        verification_status: VerificationStatus,
+    ) -> anyhow::Result<()> {
         let round = vote.vote_data().proposed().round();
 
         if vote.is_timeout() {
@@ -1234,7 +1239,7 @@ impl RoundManager {
         }
         let vote_reception_result =
             self.round_state
-                .insert_vote(vote, self.epoch_state.clone(), verified);
+                .insert_vote(vote, self.epoch_state.clone(), verification_status);
         self.process_vote_reception_result(vote, vote_reception_result)
             .await
     }
@@ -1446,7 +1451,7 @@ impl RoundManager {
     #[allow(clippy::unwrap_used)]
     pub async fn start(
         mut self,
-        mut verified_event_rx: aptos_channel::Receiver<
+        mut event_rx: aptos_channel::Receiver<
             (Author, Discriminant<VerifiedEvent>),
             (Author, VerifiedEvent),
         >,
@@ -1524,19 +1529,19 @@ impl RoundManager {
                         },
                     };
                 },
-                (peer_id, event) = verified_event_rx.select_next_some() => {
+                (peer_id, event) = event_rx.select_next_some() => {
                     let result = match event {
                         VerifiedEvent::VoteMsg(vote_msg) => {
-                            monitor!("process_vote", self.process_vote_msg(*vote_msg, true).await)
+                            monitor!("process_vote", self.process_vote_msg(*vote_msg, VerificationStatus::Verified).await)
                         }
                         VerifiedEvent::OrderVoteMsg(order_vote_msg) => {
-                            monitor!("process_order_vote", self.process_order_vote_msg(*order_vote_msg, true).await)
+                            monitor!("process_order_vote", self.process_order_vote_msg(*order_vote_msg, VerificationStatus::Verified).await)
                         }
                         VerifiedEvent::UnverifiedVoteMsg(vote_msg) => {
-                            monitor!("process_unverified_vote", self.process_vote_msg(*vote_msg, false).await)
+                            monitor!("process_unverified_vote", self.process_vote_msg(*vote_msg, VerificationStatus::Unverified).await)
                         }
                         VerifiedEvent::UnverifiedOrderVoteMsg(order_vote_msg) => {
-                            monitor!("process_unverified_order_vote", self.process_order_vote_msg(*order_vote_msg, false).await)
+                            monitor!("process_unverified_order_vote", self.process_order_vote_msg(*order_vote_msg, VerificationStatus::Unverified).await)
                         }
                         VerifiedEvent::UnverifiedSyncInfo(sync_info) => {
                             monitor!(
@@ -1548,7 +1553,7 @@ impl RoundManager {
                             "process_local_timeout",
                             self.process_local_timeout(round).await
                         ),
-                        unexpected_event => unreachable!("Unexpected verified event: {:?}", unexpected_event),
+                        unexpected_event => unreachable!("Unexpected event: {:?}", unexpected_event),
                     }
                     .with_context(|| format!("from peer {}", peer_id));
 
