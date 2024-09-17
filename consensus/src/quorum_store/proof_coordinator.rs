@@ -15,7 +15,7 @@ use aptos_consensus_types::proof_of_store::{
 use aptos_logger::prelude::*;
 use aptos_types::{
     aggregate_signature::PartialSignatures, epoch_state::EpochState,
-    validator_verifier::ValidatorVerifier, PeerId,
+    ledger_info::VerificationStatus, validator_verifier::ValidatorVerifier, PeerId,
 };
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::{
@@ -30,9 +30,9 @@ use tokio::{
 
 #[derive(Debug)]
 pub(crate) enum ProofCoordinatorCommand {
-    // The bool indicates whether the signed batch info message is already verified.
+    // The verification status indicates whether the signed batch info message is already verified.
     // If the message is not verified, the coordinator is exepected to verify the message.
-    AppendSignature((SignedBatchInfoMsg, bool)),
+    AppendSignature((SignedBatchInfoMsg, VerificationStatus)),
     CommitNotification(Vec<BatchInfo>),
     Shutdown(TokioOneshot::Sender<()>),
 }
@@ -80,7 +80,7 @@ impl IncrementalProofState {
         &mut self,
         signed_batch_info: &SignedBatchInfo,
         epoch_state: Arc<EpochState>,
-        verified: bool,
+        verification_status: VerificationStatus,
     ) -> Result<(), SignedBatchInfoError> {
         if signed_batch_info.batch_info() != &self.info {
             return Err(SignedBatchInfoError::WrongInfo((
@@ -95,20 +95,23 @@ impl IncrementalProofState {
         {
             Some(_voting_power) => {
                 let signer = signed_batch_info.signer();
-                if verified {
-                    self.verified_signatures
-                        .add_signature(signer, signed_batch_info.signature().clone());
-                    self.unverified_signatures.remove_signature(signer);
-                } else if !self.verified_signatures.contains_voter(&signer) {
-                    if self.unverified_signatures.contains_voter(&signer) {
-                        warn!(
-                            "Duplicate unverified signatures received from {} on signed batch info",
-                            signer
-                        );
+                match verification_status {
+                    VerificationStatus::Verified => {
+                        self.verified_signatures
+                            .add_signature(signer, signed_batch_info.signature().clone());
                         self.unverified_signatures.remove_signature(signer);
-                    }
-                    self.unverified_signatures
-                        .add_signature(signer, signed_batch_info.signature().clone());
+                    },
+                    VerificationStatus::Unverified => {
+                        if !self.verified_signatures.contains_voter(&signer) {
+                            warn!(
+                                "Duplicate unverified signatures received from {} on signed batch info",
+                                signer
+                            );
+                            self.unverified_signatures.remove_signature(signer);
+                            self.unverified_signatures
+                                .add_signature(signer, signed_batch_info.signature().clone());
+                        }
+                    },
                 }
                 if signer == self.info.author() {
                     self.self_voted = true;
@@ -310,7 +313,7 @@ impl ProofCoordinator {
         &mut self,
         signed_batch_info: SignedBatchInfo,
         epoch_state: Arc<EpochState>,
-        verified: bool,
+        verification_status: VerificationStatus,
     ) -> Result<Option<ProofOfStore>, SignedBatchInfoError> {
         if !self
             .batch_info_to_proof
@@ -322,7 +325,7 @@ impl ProofCoordinator {
             .batch_info_to_proof
             .get_mut(signed_batch_info.batch_info())
         {
-            value.add_signature(&signed_batch_info, epoch_state.clone(), verified)?;
+            value.add_signature(&signed_batch_info, epoch_state.clone(), verification_status)?;
             if !value.completed && value.ready(epoch_state.clone()) {
                 let proof = {
                     let _timer = counters::SIGNED_BATCH_INFO_VERIFY_DURATION.start_timer();
@@ -439,13 +442,13 @@ impl ProofCoordinator {
                                 }
                             }
                         },
-                        ProofCoordinatorCommand::AppendSignature((signed_batch_infos, verified)) => {
+                        ProofCoordinatorCommand::AppendSignature((signed_batch_infos, verification_status)) => {
                             let mut proofs = vec![];
                             for signed_batch_info in signed_batch_infos.take().into_iter() {
                                 let peer_id = signed_batch_info.signer();
                                 let digest = *signed_batch_info.digest();
                                 let batch_id = signed_batch_info.batch_id();
-                                match self.add_signature(signed_batch_info, epoch_state.clone(), verified) {
+                                match self.add_signature(signed_batch_info, epoch_state.clone(), verification_status.clone()) {
                                     Ok(result) => {
                                         if let Some(proof) = result {
                                             debug!(

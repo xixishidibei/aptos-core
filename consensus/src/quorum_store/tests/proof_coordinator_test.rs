@@ -14,7 +14,7 @@ use aptos_consensus_types::proof_of_store::{BatchId, SignedBatchInfo, SignedBatc
 use aptos_crypto::HashValue;
 use aptos_executor_types::ExecutorResult;
 use aptos_types::{
-    epoch_state::EpochState, transaction::SignedTransaction,
+    epoch_state::EpochState, ledger_info::VerificationStatus, transaction::SignedTransaction,
     validator_verifier::random_validator_verifier, PeerId,
 };
 use mini_moka::sync::Cache;
@@ -81,7 +81,7 @@ async fn test_proof_coordinator_basic() {
         assert!(proof_coordinator_tx
             .send(ProofCoordinatorCommand::AppendSignature((
                 SignedBatchInfoMsg::new(vec![signed_batch_info]),
-                true
+                VerificationStatus::Verified,
             )))
             .await
             .is_ok());
@@ -140,7 +140,7 @@ async fn test_proof_coordinator_with_unverified_signatures() {
                 assert!(proof_coordinator_tx
                     .send(ProofCoordinatorCommand::AppendSignature((
                         SignedBatchInfoMsg::new(vec![signed_batch_info]),
-                        false,
+                        VerificationStatus::Unverified,
                     )))
                     .await
                     .is_ok())
@@ -150,7 +150,7 @@ async fn test_proof_coordinator_with_unverified_signatures() {
                 assert!(proof_coordinator_tx
                     .send(ProofCoordinatorCommand::AppendSignature((
                         SignedBatchInfoMsg::new(vec![signed_batch_info]),
-                        false
+                        VerificationStatus::Unverified,
                     )))
                     .await
                     .is_ok());

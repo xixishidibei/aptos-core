@@ -317,6 +317,7 @@ impl LedgerInfoWithV0 {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum VerificationStatus {
     Verified,
     Unverified,

@@ -11,7 +11,7 @@ use crate::{
 };
 use aptos_channels::aptos_channel;
 use aptos_logger::prelude::*;
-use aptos_types::PeerId;
+use aptos_types::{ledger_info::VerificationStatus, PeerId};
 use futures::StreamExt;
 use tokio::sync::mpsc::Sender;
 
@@ -57,8 +57,10 @@ impl NetworkListener {
                         counters::QUORUM_STORE_MSG_COUNT
                             .with_label_values(&["NetworkListener::signedbatchinfo"])
                             .inc();
-                        let cmd =
-                            ProofCoordinatorCommand::AppendSignature((*signed_batch_infos, true));
+                        let cmd = ProofCoordinatorCommand::AppendSignature((
+                            *signed_batch_infos,
+                            VerificationStatus::Verified,
+                        ));
                         self.proof_coordinator_tx
                             .send(cmd)
                             .await
@@ -68,8 +70,10 @@ impl NetworkListener {
                         counters::QUORUM_STORE_MSG_COUNT
                             .with_label_values(&["NetworkListener::signedbatchinfo"])
                             .inc();
-                        let cmd =
-                            ProofCoordinatorCommand::AppendSignature((*signed_batch_infos, false));
+                        let cmd = ProofCoordinatorCommand::AppendSignature((
+                            *signed_batch_infos,
+                            VerificationStatus::Unverified,
+                        ));
                         self.proof_coordinator_tx
                             .send(cmd)
                             .await
