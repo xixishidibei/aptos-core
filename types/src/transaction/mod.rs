@@ -58,8 +58,9 @@ pub use self::block_epilogue::{BlockEndInfo, BlockEpiloguePayload};
 use crate::state_store::create_empty_sharded_state_updates;
 use crate::{
     block_metadata_ext::BlockMetadataExt, contract_event::TransactionEvent, executable::ModulePath,
-    fee_statement::FeeStatement, proof::accumulator::InMemoryEventAccumulator,
-    validator_txn::ValidatorTransaction, write_set::TransactionWrite,
+    fee_statement::FeeStatement, function_info::FunctionInfo,
+    proof::accumulator::InMemoryEventAccumulator, validator_txn::ValidatorTransaction,
+    write_set::TransactionWrite,
 };
 pub use block_output::BlockOutput;
 pub use change_set::ChangeSet;
@@ -77,11 +78,9 @@ pub use script::{
 };
 use serde::de::DeserializeOwned;
 use std::{collections::BTreeSet, hash::Hash, ops::Deref, sync::atomic::AtomicU64};
-use crate::function_info::FunctionInfo;
 
 pub type Version = u64; // Height - also used for MVCC in StateDB
 pub type AtomicVersion = AtomicU64;
-
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Auth<'a> {
@@ -341,10 +340,7 @@ impl RawTransaction {
                 fee_payer.clone().unwrap().0,
             )
         } else {
-            RawTransactionWithData::new_multi_agent(
-                self.clone(),
-                secondary_signers.clone(),
-            )
+            RawTransactionWithData::new_multi_agent(self.clone(), secondary_signers.clone())
         };
         let sender_authenticator = match sender_auth {
             Auth::Ed25519(sender_private_key) => {
@@ -354,7 +350,9 @@ impl RawTransaction {
                     sender_signature,
                 )
             },
-            Auth::Abstraction(func, sig) => AccountAuthenticator::abstraction(func.clone(), sig.clone())
+            Auth::Abstraction(func, sig) => {
+                AccountAuthenticator::abstraction(func.clone(), sig.clone())
+            },
         };
 
         if secondary_auths.len() != secondary_signers.len() {
@@ -367,12 +365,11 @@ impl RawTransaction {
             let secondary_authenticator = match auth {
                 Auth::Ed25519(private_key) => {
                     let signature = private_key.sign(&message)?;
-                    AccountAuthenticator::ed25519(
-                        Ed25519PublicKey::from(private_key),
-                        signature,
-                    )
+                    AccountAuthenticator::ed25519(Ed25519PublicKey::from(private_key), signature)
                 },
-                Auth::Abstraction(func, sig) => AccountAuthenticator::abstraction(func.clone(), sig.clone())
+                Auth::Abstraction(func, sig) => {
+                    AccountAuthenticator::abstraction(func.clone(), sig.clone())
+                },
             };
             secondary_authenticators.push(secondary_authenticator);
         }
@@ -386,7 +383,9 @@ impl RawTransaction {
                         sender_signature,
                     )
                 },
-                Auth::Abstraction(func, sig) => AccountAuthenticator::abstraction(func.clone(), sig.clone())
+                Auth::Abstraction(func, sig) => {
+                    AccountAuthenticator::abstraction(func.clone(), sig.clone())
+                },
             };
             Ok(SignatureCheckedTransaction(
                 SignedTransaction::new_fee_payer(
