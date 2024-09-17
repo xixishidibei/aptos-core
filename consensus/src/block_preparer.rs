@@ -15,6 +15,7 @@ use aptos_logger::info;
 use aptos_types::transaction::SignedTransaction;
 use fail::fail_point;
 use futures::{stream::FuturesOrdered, StreamExt};
+use rayon::prelude::*;
 use std::{cmp::Reverse, collections::HashSet, sync::Arc};
 
 pub struct BlockPreparer {
@@ -133,6 +134,7 @@ impl BlockPreparer {
         //     now.elapsed()
         // );
 
+        // TODO: don't materialize these?
         let (mut batched_txns, max_txns_from_block_to_execute) = monitor!("get_transactions", {
             self.get_transactions(block, block_window).await?
         });
@@ -147,25 +149,36 @@ impl BlockPreparer {
             // stable sort to ensure batches with same gas are in the same order
             batched_txns.sort_by_key(|(_, gas)| Reverse(*gas));
 
-            let txns: Vec<_> = monitor!("flatten_transactions", {
+            let txns: Vec<_> = monitor!("filter_and_flatten_transactions", {
                 batched_txns
-                    .into_iter()
-                    .flat_map(|(txns, _)| txns.into_iter())
+                    .into_par_iter()
+                    .flat_map(|(txns, _)| {
+                        txns.into_par_iter()
+                            .with_min_len(32)
+                            .filter(|txn| !committed_transactions.contains(&txn.committed_hash()))
+                    })
                     .collect()
             });
-            let txns_len = txns.len();
-            let filtered_txns = monitor!("filter_committed_transactions", {
-                txns.into_iter()
-                    .filter(|txn| !committed_transactions.contains(&txn.committed_hash()))
-                    .collect::<Vec<_>>()
-            });
-            info!(
-                "BlockPreparer: Filtered {}/{} committed transactions",
-                txns_len - filtered_txns.len(),
-                txns_len
-            );
+
+            // let txns: Vec<_> = monitor!("flatten_transactions", {
+            //     batched_txns
+            //         .into_iter()
+            //         .flat_map(|(txns, _)| txns.into_iter())
+            //         .collect()
+            // });
+            // let txns_len = txns.len();
+            // let filtered_txns = monitor!("filter_committed_transactions", {
+            //     txns.into_iter()
+            //         .filter(|txn| !committed_transactions.contains(&txn.committed_hash()))
+            //         .collect::<Vec<_>>()
+            // });
+            // info!(
+            //     "BlockPreparer: Filtered {}/{} committed transactions",
+            //     txns_len - filtered_txns.len(),
+            //     txns_len
+            // );
             let filtered_txns = monitor!("filter_transactions", {
-                txn_filter.filter(block_id, block_timestamp_usecs, filtered_txns)
+                txn_filter.filter(block_id, block_timestamp_usecs, txns)
             });
             let deduped_txns = monitor!("dedup_transactions", txn_deduper.dedup(filtered_txns));
             let mut shuffled_txns = {
