@@ -6,6 +6,7 @@ use crate::{Factory, GenesisConfig, GenesisConfigFn, NodeConfigFn, Result, Swarm
 use anyhow::bail;
 use aptos_logger::info;
 use rand::rngs::StdRng;
+use serde_json::json;
 use std::{convert::TryInto, num::NonZeroUsize, time::Duration};
 
 pub mod chaos;
@@ -19,9 +20,7 @@ pub mod prometheus;
 mod stateful_set;
 mod swarm;
 
-use super::{
-    ForgeDeployerManager, ForgeDeployerType, ForgeDeployerValues, DEFAULT_FORGE_DEPLOYER_PROFILE,
-};
+use super::{ForgeDeployerManager, ForgeDeployerType, DEFAULT_FORGE_DEPLOYER_PROFILE};
 use aptos_sdk::crypto::ed25519::ED25519_PRIVATE_KEY_LENGTH;
 pub use cluster_helper::*;
 pub use constants::*;
@@ -185,18 +184,18 @@ impl Factory for K8sFactory {
             // add an indexer too!
             if self.enable_indexer {
                 // NOTE: by default, use a deploy profile and no additional configuration values
-                let values = ForgeDeployerValues {
-                    profile: DEFAULT_FORGE_DEPLOYER_PROFILE.to_string(),
-                    era: new_era.clone().expect("Era not set in created testnet"),
-                    namespace: self.kube_namespace.clone(),
-                    indexer_grpc_values: None,
-                    indexer_processor_values: None,
-                };
+                let config = serde_json::from_value(json!({
+                    "profile": DEFAULT_FORGE_DEPLOYER_PROFILE.to_string(),
+                    "era": new_era.clone().expect("Era not set in created testnet"),
+                    "namespace": self.kube_namespace.clone(),
+                }))?;
 
-                let forge_deployer_manager =
-                    ForgeDeployerManager::from_k8s_client(kube_client.clone(), values);
+                let forge_deployer_manager = ForgeDeployerManager::new(
+                    kube_client.clone(),
+                    self.kube_namespace.clone(),
+                    config,
+                );
 
-                forge_deployer_manager.ensure_namespace_prepared().await?;
                 forge_deployer_manager
                     .start(ForgeDeployerType::Indexer)
                     .await?;

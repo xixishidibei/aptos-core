@@ -65,6 +65,7 @@ use clap::{Parser, Subcommand};
 use futures::stream::{FuturesUnordered, StreamExt};
 use once_cell::sync::Lazy;
 use rand::{rngs::ThreadRng, seq::SliceRandom, Rng};
+use serde_json::json;
 use std::{
     env,
     num::NonZeroUsize,
@@ -432,16 +433,13 @@ fn main() -> Result<()> {
             OperatorCommand::Create(create) => {
                 let kube_client = runtime.block_on(create_k8s_client())?;
                 let era = generate_new_era();
-                let values = ForgeDeployerValues {
-                    profile: DEFAULT_FORGE_DEPLOYER_PROFILE.to_string(),
-                    era,
-                    namespace: create.namespace,
-                    indexer_grpc_values: None,
-                    indexer_processor_values: None,
-                };
+                let config = serde_json::from_value(json!({
+                    "profile": DEFAULT_FORGE_DEPLOYER_PROFILE.to_string(),
+                    "era": era,
+                    "namespace": create.namespace.clone(),
+                }))?;
                 let forge_deployer_manager =
-                    ForgeDeployerManager::from_k8s_client(kube_client, values);
-                runtime.block_on(forge_deployer_manager.ensure_namespace_prepared())?;
+                    ForgeDeployerManager::new(kube_client, create.namespace, config);
                 // NOTE: this is generally not going to run from within the cluster, do not perform any operations
                 // that might require internal DNS resolution to work, such as txn emission directly against the node service IPs.
                 runtime.block_on(forge_deployer_manager.start(ForgeDeployerType::Testnet))?;
