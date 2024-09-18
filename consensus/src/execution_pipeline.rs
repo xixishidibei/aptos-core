@@ -77,6 +77,7 @@ impl ExecutionPipeline {
         block_executor_onchain_config: BlockExecutorConfigFromOnchain,
     ) -> StateComputeResultFut {
         let (result_tx, result_rx) = oneshot::channel();
+        let block_round = block.round();
         let block_id = block.id();
         self.prepare_block_tx
             .send(PrepareBlockCommand {
@@ -91,14 +92,19 @@ impl ExecutionPipeline {
             .expect("Failed to send block to execution pipeline.");
 
         Box::pin(async move {
-            result_rx
+            let result = result_rx
                 .await
                 .map_err(|err| ExecutorError::InternalError {
                     error: format!(
                         "Failed to receive execution result for block {}: {:?}.",
                         block_id, err
                     ),
-                })?
+                })?;
+            info!(
+                "received result_rx for round {} block {}.",
+                block_round, block_id
+            );
+            result
         })
     }
 
@@ -254,6 +260,7 @@ impl ExecutionPipeline {
             result_tx.send(pipe_line_res).unwrap_or_else(|value| {
                 process_failed_to_send_result(value, block_id, "ledger_apply")
             });
+            info!("ledger_apply send done block {}.", block_id);
         }
         debug!("ledger_apply stage quitting.");
     }

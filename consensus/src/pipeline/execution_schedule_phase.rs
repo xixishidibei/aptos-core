@@ -101,7 +101,11 @@ impl StatelessPipeline for ExecutionSchedulePhase {
             // wait for all futs so that lifetime_guard is guaranteed to be dropped only
             // after all executor calls are over
             for (block, fut) in itertools::zip_eq(&ordered_blocks, futs) {
-                debug!("try to receive compute result for block {}", block.id());
+                info!(
+                    "try to receive compute result for round {} block {}",
+                    block.round(),
+                    block.id()
+                );
                 results.push(fut.await)
             }
             let results = itertools::zip_eq(ordered_blocks, results)
