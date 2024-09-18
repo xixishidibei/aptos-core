@@ -90,7 +90,7 @@ pub fn calc_brackets(s: &str) -> Vec<i32> {
     let bytes = s.as_bytes();
     let mut res = vec![0; s.len()];
 
-    for i in 1..bytes.len() {
+    for i in 0..bytes.len() {
         let is_open_bracket = bytes[i] == b'{';
         let is_closed_bracket = bytes[i] == b'}';
     //    println!("is_open_bracket: {:?}", is_open_bracket as u32);
@@ -110,9 +110,15 @@ pub fn calc_brackets(s: &str) -> Vec<i32> {
 pub fn fill_brackets(s: &Vec<i32>) -> Vec<i32> {
     let mut res = s.clone();
 
+    res[0] = s[0];
     for i in 1..s.len() {
         //println!("res: {:?}", res[i-1]);
-        res[i] = res[i-1] + res[i];
+        res[i] = res[i-1] + res[i] - 1;
+    }
+    for i in 0..s.len() {
+        if res[i] < 0 {
+            res[i] = 0;
+        }
     }
     res
 }
@@ -421,7 +427,7 @@ fn fill_brackets_map_test() {
             .max_length("in", 13)
             .max_length("brackets", 13);
 
-    let test_cases = [("hello world{}", true), ("{}hello world", true), ("hello{} world", true), ("hell{o wor}ld", true), ("hell{o wor}ld", false)];
+    let test_cases = [("{hello world{}}", true), ("{{}hello world}", true), ("{hello{} world}", true), ("{hell{o wor}ld}", true), ("{hell{o wor}ld}", false)];
     for t in test_cases {
         let initial_array = t.0;
         let test_should_pass = t.1;
@@ -439,6 +445,7 @@ fn fill_brackets_map_test() {
             .unwrap();
 
         let result = circuit_handle.gen_witness(circuit_input_signals);
+        println!("result: {:?}", result);
         if test_should_pass {
             assert!(result.is_ok());
         } else {

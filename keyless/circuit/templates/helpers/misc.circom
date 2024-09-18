@@ -149,8 +149,7 @@ template BracketsMap(len) {
     signal input arr[len];
     signal output brackets[len];
 
-    brackets[0] <== 0;
-    for (var i = 1; i < len; i++) {
+    for (var i = 0; i < len; i++) {
         var is_open_bracket = IsEqual()([arr[i], 123]); // 123 = `{`
         var is_closed_bracket = IsEqual()([arr[i], 125]); // 125 = '}'
         brackets[i] <== is_open_bracket + (0-is_closed_bracket);
@@ -164,19 +163,23 @@ template BracketsMap(len) {
 // EXCEPTIONS: The index of the second-to-last closed bracket will contain a `0`
 // The first character is skipped - in our specific application we always expect an
 // open bracket in the first JWT character
-// TODO: Unit test
 template FillBracketsMap(len) {
     signal input arr[len];
     signal output out[len];
 
-    out[0] <== 0;
+    signal prelim_out[len];
+    prelim_out[0] <== IsEqual()([arr[0], 1]); // First character is assumed not to be a closed bracket
     for (var i = 1; i < len; i++) {
         var is_open_bracket = IsEqual()([arr[i], 1]);
         var is_closed_bracket = IsEqual()([arr[i], -1]);
-        out[i] <== is_open_bracket + out[i-1] - is_closed_bracket;
+        prelim_out[i] <== is_open_bracket + prelim_out[i-1] - is_closed_bracket - 1; // Subtracting 1 here amounts to ignoring the outermost open and closed brackets, which is what we want
+    }
+    // Remove all negative numbers from the array
+    for (var i = 0; i < len; i++) {
+        var is_neg = LessThan(20)([prelim_out[i], 0]);
+        out[i] <== prelim_out[i] * (1-is_neg);
     }
 }
-
 
 // Given a base64-encoded array `in`, max length `maxN`, and actual unpadded length `n`, returns
 // the actual length of the decoded string
