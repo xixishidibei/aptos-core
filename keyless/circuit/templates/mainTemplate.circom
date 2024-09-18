@@ -123,7 +123,7 @@ template identity(
     signal input aud_field_len; // ASCII
     signal input aud_index; // index of aud field in ASCII jwt
     CheckSubstrInclusionPoly(max_ascii_jwt_payload_len, maxAudKVPairLen)(ascii_jwt_payload, ascii_jwt_payload_hash, aud_field, aud_field_len, aud_index); 
-    CheckSubstrInclusionPoly(max_ascii_jwt_payload_len, maxAudKVPairLen)(string_bodies, ascii_jwt_payload_hash, aud_field_string_bodies, aud_field_len, aud_index); 
+    CheckSubstrInclusionPoly(max_ascii_jwt_payload_len, maxAudKVPairLen)(string_bodies, ascii_jwt_payload_hash, aud_field_string_bodies, aud_field_len, aud_index);
 
     signal aud_brackets_selector[max_ascii_jwt_payload_len] <== ArraySelector(max_ascii_jwt_payload_len)(aud_index, aud_index+aud_field_len);
     signal aud_is_nested <== EscalarProduct(max_ascii_jwt_payload_len)(unquoted_filled_brackets_map, aud_brackets_selector);

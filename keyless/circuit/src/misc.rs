@@ -123,6 +123,12 @@ pub fn fill_brackets(s: &Vec<i32>) -> Vec<i32> {
             res[i] = 0;
         }
     }
+    let res_copy = res.clone();
+    for i in 1..s.len() {
+       if res[i] == res_copy[i-1]+1 {
+           res[i] = res[i]-1;
+       }
+    }
     res
 }
 
@@ -390,7 +396,6 @@ fn email_verified_check_test() {
 }
 
 #[test]
-// TODO: Extend this
 fn brackets_map_test() {
     let circuit_handle = TestCircuitHandle::new("misc/brackets_map_test.circom").unwrap();
     let config = CircuitPaddingConfig::new()
@@ -423,21 +428,19 @@ fn brackets_map_test() {
 }
 
 #[test]
-// TODO: Extend this
 fn fill_brackets_map_test() {
     let circuit_handle = TestCircuitHandle::new("misc/fill_brackets_map_test.circom").unwrap();
     let config = CircuitPaddingConfig::new()
             .max_length("in", 13)
             .max_length("brackets", 13);
 
-//    let test_cases = [("{hello world{}}", true), ("{{}hello world}", true), ("hellllo{} world", true), (" {hello{} worl}", true), ("{hell{o wor}ld}", true), ("{hell{o wor}ld}", false)];
-    let test_cases = [("{hell{o wor}ld}", true)];
-
+    let test_cases = [("{hello world{}}", true), ("{{}hello world}", true), ("hellllo{} world", true), (" {hello{} worl}", true), ("{hell{o wor}ld}", true), ("{hell{o wor}ld}", false)];
     for t in test_cases {
         let initial_array = t.0;
         let test_should_pass = t.1;
         let brackets = calc_brackets(&initial_array);
         let mut filled_brackets = fill_brackets(&brackets);
+        println!("filled brackets: {:?}", filled_brackets);
         if !test_should_pass {
             filled_brackets[3] = 5;
         }

@@ -159,29 +159,34 @@ template BracketsMap(len) {
 // Given an input array `arr` of length `len`, outputs an array `out` which
 // at each index, contains positive integers in between the spaces of open brackets
 // which have not been closed, where open brackets are represented by '1', and
-// closed brackets are represented by `0`.
-// EXCEPTIONS: The index of the second-to-last closed bracket will contain a `0`
-// The first character is skipped - in our specific application we always expect an
-// open bracket in the first JWT character
+// closed brackets are represented by `-1' in the input array. The first open bracket and last closed bracket
+// of the input array are ignored in the output, which contains positive integers between nested brackets
 template FillBracketsMap(len) {
     signal input arr[len];
     signal output out[len];
 
     signal prelim_out1[len];
     signal prelim_out2[len];
+    signal prelim_out3[len];
     prelim_out1[0] <== IsEqual()([arr[0], 1]); // First character is assumed not to be a closed bracket
     for (var i = 1; i < len; i++) {
         var is_open_bracket = IsEqual()([arr[i], 1]);
         var is_closed_bracket = IsEqual()([arr[i], -1]);
-        prelim_out1[i] <== is_open_bracket + prelim_out1[i-1] - is_closed_bracket; // Subtracting 1 here amounts to ignoring the outermost open and closed brackets, which is what we want
+        prelim_out1[i] <== is_open_bracket + prelim_out1[i-1] - is_closed_bracket;
     }
+    // Subtracting 1 here amounts to ignoring the outermost open and closed brackets, which is what we want
     for (var i = 0; i < len; i++) {
         prelim_out2[i] <== prelim_out1[i]-1;
     }
     // Remove all negative numbers from the array
     for (var i = 0; i < len; i++) {
         var is_neg = LessThan(20)([prelim_out2[i], 0]);
-        out[i] <== prelim_out2[i] * (1-is_neg);
+        prelim_out3[i] <== prelim_out2[i] * (1-is_neg);
+    }
+    // Decrement the positions of open brackets by 1 to remove offset
+    for (var i = 1; i < len; i++) {
+        var is_inc = IsEqual()([prelim_out3[i], prelim_out3[i-1]+1]);
+        out[i] <== prelim_out3[i] - is_inc;
     }
 }
 
