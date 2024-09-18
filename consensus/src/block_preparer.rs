@@ -100,23 +100,26 @@ impl BlockPreparer {
         let mut committed_transactions = HashSet::new();
 
         // TODO: lots of repeated code here
-        block_window
-            .pipelined_blocks()
-            .iter()
-            .filter(|window_block| window_block.round() < block.round() - 1)
-            .for_each(|b| {
-                info!(
-                    "BlockPreparer: Waiting for committed transactions at block {} for block {}",
-                    b.round(),
-                    block.round()
-                );
-                for txn_hash in b.wait_for_committed_transactions() {
-                    committed_transactions.insert(*txn_hash);
-                }
-            });
+        monitor!("wait_for_committed_transactions", {
+            block_window
+                .pipelined_blocks()
+                .iter()
+                .filter(|window_block| window_block.round() < block.round() - 1)
+                .for_each(|b| {
+                    info!(
+                        "BlockPreparer: Waiting for committed transactions at block {} for block {}",
+                        b.round(),
+                        block.round()
+                    );
+                    for txn_hash in b.wait_for_committed_transactions() {
+                        committed_transactions.insert(*txn_hash);
+                    }
+                });
+        });
         info!(
-            "BlockPreparer: Waiting for part of committed transactions took {:?}",
-            now.elapsed()
+            "BlockPreparer: Waiting for part of committed transactions for round {} took {} ms",
+            block.round(),
+            now.elapsed().as_millis()
         );
         // TODO: this blocks the pipeline, so removed for now, to be revived with a streaming TransactionProvider based BlockSTM
         // block_window
