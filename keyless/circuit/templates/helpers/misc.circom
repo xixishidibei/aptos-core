@@ -167,17 +167,21 @@ template FillBracketsMap(len) {
     signal input arr[len];
     signal output out[len];
 
-    signal prelim_out[len];
-    prelim_out[0] <== IsEqual()([arr[0], 1]); // First character is assumed not to be a closed bracket
+    signal prelim_out1[len];
+    signal prelim_out2[len];
+    prelim_out1[0] <== IsEqual()([arr[0], 1]); // First character is assumed not to be a closed bracket
     for (var i = 1; i < len; i++) {
         var is_open_bracket = IsEqual()([arr[i], 1]);
         var is_closed_bracket = IsEqual()([arr[i], -1]);
-        prelim_out[i] <== is_open_bracket + prelim_out[i-1] - is_closed_bracket - 1; // Subtracting 1 here amounts to ignoring the outermost open and closed brackets, which is what we want
+        prelim_out1[i] <== is_open_bracket + prelim_out1[i-1] - is_closed_bracket; // Subtracting 1 here amounts to ignoring the outermost open and closed brackets, which is what we want
+    }
+    for (var i = 0; i < len; i++) {
+        prelim_out2[i] <== prelim_out1[i]-1;
     }
     // Remove all negative numbers from the array
     for (var i = 0; i < len; i++) {
-        var is_neg = LessThan(20)([prelim_out[i], 0]);
-        out[i] <== prelim_out[i] * (1-is_neg);
+        var is_neg = LessThan(20)([prelim_out2[i], 0]);
+        out[i] <== prelim_out2[i] * (1-is_neg);
     }
 }
 
