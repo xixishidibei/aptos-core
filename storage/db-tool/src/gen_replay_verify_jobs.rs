@@ -81,6 +81,7 @@ impl Opt {
         let job_ranges = metadata_view
             .all_state_snapshots()
             .iter()
+            .dedup_by(|a, b| a.epoch == b.epoch)
             .filter(|s| s.epoch >= global_min_epoch && s.version <= global_end_version)
             .chain(once(&fake_end))
             .collect_vec()
