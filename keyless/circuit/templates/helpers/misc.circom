@@ -129,9 +129,7 @@ template StringBodies(len) {
     var is_quote = IsEqual()([in[i], 34]); 
     var prev_is_odd_backslash = adjacent_backslash_parity[i-1];
     quotes[i] <== is_quote * (1 - prev_is_odd_backslash);
-    quote_parity_1[i] <== quotes[i] * (1 - quote_parity[i-1]);
-    quote_parity_2[i] <== (1 - quotes[i]) * quote_parity[i-1];
-    quote_parity[i] <== quote_parity_1[i] + quote_parity_2[i];
+    quote_parity[i] <== XOR()(quotes[i], quote_parity[i-1]);
   }
 
 
