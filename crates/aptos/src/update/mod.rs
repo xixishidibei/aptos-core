@@ -7,6 +7,7 @@
 mod aptos;
 mod helpers;
 mod movefmt;
+mod prover_dependency;
 mod revela;
 mod tool;
 mod update_helper;

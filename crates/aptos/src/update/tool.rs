@@ -4,7 +4,7 @@
 use super::{aptos::AptosUpdateTool, revela::RevelaUpdateTool};
 use crate::{
     common::types::{CliCommand, CliResult},
-    update::movefmt::FormatterUpdateTool,
+    update::{movefmt::FormatterUpdateTool, prover_dependency::ProverDependencyInstaller},
 };
 use clap::Subcommand;
 
@@ -14,6 +14,7 @@ pub enum UpdateTool {
     Aptos(AptosUpdateTool),
     Revela(RevelaUpdateTool),
     Movefmt(FormatterUpdateTool),
+    InstallProverDependency(ProverDependencyInstaller),
 }
 
 impl UpdateTool {
@@ -22,6 +23,7 @@ impl UpdateTool {
             UpdateTool::Aptos(tool) => tool.execute_serialized().await,
             UpdateTool::Revela(tool) => tool.execute_serialized().await,
             UpdateTool::Movefmt(tool) => tool.execute_serialized().await,
+            UpdateTool::InstallProverDependency(tool) => tool.execute_serialized().await,
         }
     }
 }

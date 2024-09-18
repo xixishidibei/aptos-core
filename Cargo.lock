@@ -328,6 +328,7 @@ dependencies = [
  "move-ir-types",
  "move-model",
  "move-package",
+ "move-prover-boogie-backend",
  "move-symbol-pool",
  "move-unit-test",
  "move-vm-runtime",
