@@ -332,7 +332,7 @@ jobs:
             target_branch="aptos-release-v${major}.${prev_minor}"
           else
             echo "Error: Unsupported branch format" >&2
-            exit 1
+            target_branch="main"
           fi
           echo "TARGET_BRANCH=${target_branch}" >> $GITHUB_OUTPUT
 
