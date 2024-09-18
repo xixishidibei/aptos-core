@@ -16,7 +16,7 @@ use aptos_executor_types::{
     ExecutorResult,
 };
 use aptos_experimental_runtimes::thread_manager::optimal_min_len;
-use aptos_logger::{debug, error};
+use aptos_logger::{debug, error, info};
 use aptos_types::{
     block_executor::{config::BlockExecutorConfigFromOnchain, partitioner::ExecutableBlock},
     block_metadata_ext::BlockMetadataExt,
@@ -180,7 +180,7 @@ impl ExecutionPipeline {
         }) = block_rx.recv().await
         {
             let block_id = block.block_id;
-            debug!("execute_stage received block {}.", block_id);
+            info!("execute_stage received block {}.", block_id);
             let executor = executor.clone();
             let state_checkpoint_output = monitor!(
                 "execute_block",
@@ -191,13 +191,17 @@ impl ExecutionPipeline {
                         })
                     });
                     let start = Instant::now();
+                    info!("execute_and_state_checkpoint start. {}", block_id);
                     executor
                         .execute_and_state_checkpoint(
                             block,
                             parent_block_id,
                             block_executor_onchain_config,
                         )
-                        .map(|output| (output, start.elapsed()))
+                        .map(|output| {
+                            info!("execute_and_state_checkpoint end. {}", block_id);
+                            (output, start.elapsed())
+                        })
                 })
                 .await
             )
@@ -228,7 +232,7 @@ impl ExecutionPipeline {
             result_tx,
         }) = block_rx.recv().await
         {
-            debug!("ledger_apply stage received block {}.", block_id);
+            info!("ledger_apply stage received block {}.", block_id);
             let res = async {
                 let (state_checkpoint_output, execution_duration) = execution_result?;
                 let executor = executor.clone();
@@ -243,6 +247,7 @@ impl ExecutionPipeline {
                 .map(|output| (output, execution_duration))
             }
             .await;
+            info!("ledger_apply stage done block {}.", block_id);
             let pipe_line_res = res.map(|(output, execution_duration)| {
                 PipelineExecutionResult::new(input_txns, output, execution_duration)
             });

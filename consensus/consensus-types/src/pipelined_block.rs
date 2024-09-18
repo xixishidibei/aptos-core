@@ -151,6 +151,13 @@ impl PipelinedBlock {
         result: StateComputeResult,
         execution_time: Duration,
     ) -> Self {
+        info!(
+            "Setting execution result: ({}, {}) {}",
+            self.epoch(),
+            self.round(),
+            self.id()
+        );
+
         self.state_compute_result = result;
         self.input_transactions = input_transactions;
 
@@ -219,6 +226,13 @@ impl PipelinedBlock {
                 .set(committed_transactions)
                 .expect("inserting into empty committed transactions");
         }
+
+        info!(
+            "Done setting execution result: ({}, {}) {}",
+            self.epoch(),
+            self.round(),
+            self.id()
+        );
 
         self
     }

@@ -106,6 +106,7 @@ impl StatelessPipeline for ExecutionSchedulePhase {
             }
             let results = itertools::zip_eq(ordered_blocks, results)
                 .map(|(block, res)| {
+                    info!("result: {}, {}: {:?}", block.round(), block.id(), res);
                     let PipelineExecutionResult {
                         input_txns,
                         result,
