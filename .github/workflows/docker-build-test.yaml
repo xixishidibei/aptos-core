@@ -331,10 +331,21 @@ jobs:
             prev_minor=$((minor - 1))
             target_branch="aptos-release-v${major}.${prev_minor}"
           else
-            echo "Error: Unsupported branch format" >&2
+            echo "The current branch is not a release branch, use the latest docker image tag from main branch for compat test" >&2
             target_branch="main"
           fi
           echo "TARGET_BRANCH=${target_branch}" >> $GITHUB_OUTPUT
+      
+      - uses: aptos-labs/aptos-core/.github/actions/docker-setup@main
+        id: docker-setup
+        with:
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+          EXPORT_GCP_PROJECT_VARIABLES: "false"
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DOCKER_ARTIFACT_REPO: ${{ secrets.AWS_DOCKER_ARTIFACT_REPO }}
+          GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
 
       - uses: aptos-labs/aptos-core/.github/actions/get-latest-docker-image-tag@main
         id: get-docker-image-tag
