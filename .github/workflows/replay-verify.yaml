@@ -95,6 +95,7 @@ jobs:
       HISTORY_START: 518000000
       #TXNS_TO_SKIP: 12253479 12277499 148358668
       TXNS_TO_SKIP: "0"
+      # 1197378568-1198492648: https://github.com/aptos-labs/aptos-core/pull/13832
       RANGES_TO_SKIP: ""
       BACKUP_CONFIG_TEMPLATE_PATH: terraform/helm/fullnode/files/backup/gcs.yaml
       # workflow config
