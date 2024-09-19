@@ -341,6 +341,13 @@ jobs:
         with:
           branch: ${{ steps.determine-the-target-branch-to-fetch-the-latest-docker-image-tag-from.outputs.TARGET_BRANCH }}
           variants: "failpoints performance"
+      
+      # Log TARGET_BRANCH and IMAGE_TAG to fetch the latest docker image tag for compat test
+      - name: Log TARGET_BRANCH and IMAGE_TAG
+        run: |
+          echo "Fetch the latest docker image tag for compat test from"
+          echo "TARGET_BRANCH: ${{ steps.determine-the-target-branch-to-fetch-the-latest-docker-image-tag-from.outputs.TARGET_BRANCH }}"
+          echo "IMAGE_TAG: ${{ steps.get-docker-image-tag.outputs.IMAGE_TAG }}"
 
       - uses: ./.github/workflows/workflow-run-forge.yaml@main
         with:
